@@ -24,10 +24,11 @@ class AvoidCommentedOutCode extends DartLintRule {
 
     for (final comment in _allComments(unit)) {
       if (_isCodeComment(comment.lexeme)) {
-        reporter.atOffset(
-          offset: comment.offset,
-          length: comment.length,
-          errorCode: code,
+        // ignore: deprecated_member_use
+        reporter.reportErrorForOffset(
+          code,
+          comment.offset,
+          comment.length,
         );
       }
     }
