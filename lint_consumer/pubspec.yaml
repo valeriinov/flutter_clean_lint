@@ -1,0 +1,11 @@
+name: lints_consumer
+version: 0.1.0
+environment:
+  sdk: '>=3.4.3 <4.0.0'
+
+dev_dependencies:
+  custom_lint: ^0.7.5
+  flutter_clean_lint:
+    path: ..
+
+

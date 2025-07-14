@@ -1,0 +1,8 @@
+analyzer:
+  plugins:
+    - custom_lint
+
+custom_lint:
+  rules:
+    - avoid_commented_out_code
+
