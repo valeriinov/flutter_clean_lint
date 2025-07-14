@@ -9,7 +9,7 @@ environment:
 dependencies:
   analyzer:
   analyzer_plugin:
-  custom_lint_builder: ^0.7.5
+  custom_lint_builder: ^0.6.4
 
 dev_dependencies:
   flutter_test:

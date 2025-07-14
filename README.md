@@ -16,7 +16,7 @@ packages, helping you enforce project-specific standards and practices.
 
 ```yaml
 dev_dependencies:
-  custom_lint: ^0.7.5
+  custom_lint: ^0.6.4
   flutter_clean_lint:
     git:
       url: https://github.com/valeriinov/flutter_clean_lint
