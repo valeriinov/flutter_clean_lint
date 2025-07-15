@@ -20,7 +20,7 @@ dev_dependencies:
   flutter_clean_lint:
     git:
       url: https://github.com/valeriinov/flutter_clean_lint
-      ref: main
+      ref: 0.0.2
 ```
 
 **analysis_options.yaml** - enable the plugin and activate rules:
