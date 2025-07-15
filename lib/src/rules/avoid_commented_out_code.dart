@@ -54,13 +54,10 @@ class AvoidCommentedOutCode extends DartLintRule {
   bool _isDoc(String t) => t.startsWith('///') || t.startsWith('/**');
 
   bool _hasSkipPrefix(String t) {
-    const prefixes = _Patterns.skipPrefixes;
+    final pattern =
+        '^(?:/\\*|//)\\s*(?:${_Patterns.skipPrefixes.join('|')})\\b';
 
-    return prefixes.any(
-      (s) =>
-          t.toUpperCase().startsWith('// $s:') ||
-          t.toUpperCase().startsWith('/* $s:'),
-    );
+    return RegExp(pattern, caseSensitive: false).hasMatch(t);
   }
 
   bool _matches(String t) {
@@ -93,6 +90,7 @@ abstract final class _Patterns {
     // Testing helpers
     'EXPECT_LINT',
     'NO_LINT',
+    'IGNORE',
   ];
 
   static const List<String> codePatterns = [
@@ -108,7 +106,7 @@ abstract final class _Patterns {
     r'''\bpart\s+['\"]''',
 
     // Named/positional parameter: // label: value,
-    r'^(?:/\*|//)\s*\w+\s*:\s*.+[,)]?\s*(?:\*/)?$',
+    r'^(?:/\*|//)\s*\w+\s*:\s+.+[,)]?\s*(?:\*/)?$',
 
     // Stand-alone function/method/constructor call: // foo(...);
     // Allows an optional "const" prefix and multi-line invocations.

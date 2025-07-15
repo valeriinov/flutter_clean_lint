@@ -5,7 +5,13 @@
 /// Another line of docs.
 
 // TODO: this is a todo comment
+// TODO(valeriinov): Refactor logic required!
 // NOTE: this is a note comment
+
+// HH:MM
+
+// ignore: avoid_as
+// ignore: avoid_print
 
 // Looks like code but missing semicolon - should not lint
 // y = 3
