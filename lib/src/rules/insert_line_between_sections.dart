@@ -128,7 +128,9 @@ class _Visitor extends RecursiveAstVisitor<void> {
         _lineOf(end.offset) - prevLine - 1 > 0;
   }
 
-  int _lineAfter(Token token) => _lineOf(token.end);
+  int _lineAfter(Token token) {
+    return _lineOf(token.end);
+  }
 
   _StatementInfo _statementInfo(Statement node, int? prevLine) {
     final token = node.beginToken;
@@ -171,45 +173,45 @@ class _Visitor extends RecursiveAstVisitor<void> {
     return _sameDeclaration(prev, curr) ||
         _sameAssert(prev, curr) ||
         _sameYield(prev, curr) ||
-        _sameBreak(prev, curr) ||
-        _sameContinue(prev, curr) ||
+        _isCurrBreak(curr) ||
+        _isCurrContinue(curr) ||
         _sameInvocation(prev, curr) ||
         _sameAwait(prev, curr);
   }
 
-  bool _sameDeclaration(Statement a, Statement b) {
-    return a is VariableDeclarationStatement &&
-        b is VariableDeclarationStatement;
+  bool _sameDeclaration(Statement prev, Statement curr) {
+    return prev is VariableDeclarationStatement &&
+        curr is VariableDeclarationStatement;
   }
 
-  bool _sameAssert(Statement a, Statement b) {
-    return a is AssertStatement && b is AssertStatement;
+  bool _sameAssert(Statement prev, Statement curr) {
+    return prev is AssertStatement && curr is AssertStatement;
   }
 
-  bool _sameYield(Statement a, Statement b) {
-    return a is YieldStatement && b is YieldStatement;
+  bool _sameYield(Statement prev, Statement curr) {
+    return prev is YieldStatement && curr is YieldStatement;
   }
 
-  bool _sameBreak(Statement a, Statement b) {
-    return b is BreakStatement;
+  bool _isCurrBreak(Statement curr) {
+    return curr is BreakStatement;
   }
 
-  bool _sameContinue(Statement a, Statement b) {
-    return b is ContinueStatement;
+  bool _isCurrContinue(Statement curr) {
+    return curr is ContinueStatement;
   }
 
-  bool _sameInvocation(Statement a, Statement b) {
-    return a is ExpressionStatement &&
-        b is ExpressionStatement &&
-        a.expression is InvocationExpression &&
-        b.expression is InvocationExpression;
+  bool _sameInvocation(Statement prev, Statement curr) {
+    return prev is ExpressionStatement &&
+        curr is ExpressionStatement &&
+        prev.expression is InvocationExpression &&
+        curr.expression is InvocationExpression;
   }
 
-  bool _sameAwait(Statement a, Statement b) {
-    return a is ExpressionStatement &&
-        b is ExpressionStatement &&
-        a.expression is AwaitExpression &&
-        b.expression is AwaitExpression;
+  bool _sameAwait(Statement prev, Statement curr) {
+    return prev is ExpressionStatement &&
+        curr is ExpressionStatement &&
+        prev.expression is AwaitExpression &&
+        curr.expression is AwaitExpression;
   }
 
   void _validateIfStatement(IfStatement statement) {
@@ -227,18 +229,18 @@ class _Visitor extends RecursiveAstVisitor<void> {
   }
 
   int _firstElseLine(Token elseKeyword) {
-    var earliestLine = _lineOf(elseKeyword.offset);
+    int firstElseLine = _lineOf(elseKeyword.offset);
 
     for (Token? comment = elseKeyword.precedingComments;
         comment != null;
         comment = comment.next) {
       final commentLine = _lineOf(comment.offset);
-      if (commentLine < earliestLine) {
-        earliestLine = commentLine;
+      if (commentLine < firstElseLine) {
+        firstElseLine = commentLine;
       }
     }
 
-    return earliestLine;
+    return firstElseLine;
   }
 
   bool _hasExtraBlankLines(int prevLine, int nextLine) {
