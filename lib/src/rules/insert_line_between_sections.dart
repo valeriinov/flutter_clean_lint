@@ -5,13 +5,14 @@ import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-/// Ensures there is exactly one blank line between statements inside function bodies.
+/// Ensures there is exactly one blank line between code sections inside function bodies.
 class InsertLineBetweenSections extends DartLintRule {
   const InsertLineBetweenSections()
       : super(
           code: const LintCode(
             name: 'insert_line_between_sections',
-            problemMessage: 'Insert a single blank line between code sections.',
+            problemMessage:
+                'Separate distinct code sections with exactly one blank line. Do not insert blank lines within a single logical section.',
           ),
         );
 
@@ -90,7 +91,7 @@ class _Visitor extends RecursiveAstVisitor<void> {
   }
 
   void _handleSwitchMember(
-    /* SwitchCase | SwitchDefault | SwitchPatternCase */
+    // SwitchCase | SwitchDefault | SwitchPatternCase
     dynamic node,
     void Function() superCall,
   ) {
