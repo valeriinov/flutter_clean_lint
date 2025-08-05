@@ -23,6 +23,7 @@ class InsertLineBetweenSections extends DartLintRule {
   ) async {
     final result = await resolver.getResolvedUnitResult();
     final lineInfo = result.lineInfo;
+
     result.unit.visitChildren(_Visitor(reporter, code, lineInfo));
   }
 }
@@ -36,93 +37,55 @@ class _Visitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitBlock(Block node) {
-    _checkStatements(node.statements, node.leftBracket, node.rightBracket);
+    _validateStatements(node.statements, node.leftBracket, node.rightBracket);
     super.visitBlock(node);
   }
 
   @override
-  void visitSwitchCase(SwitchCase node) =>
-      _handleSwitchMember(node, () => super.visitSwitchCase(node));
+  void visitSwitchCase(SwitchCase node) {
+    _handleSwitchMember(node, () => super.visitSwitchCase(node));
+  }
 
   @override
-  void visitSwitchDefault(SwitchDefault node) =>
-      _handleSwitchMember(node, () => super.visitSwitchDefault(node));
+  void visitSwitchDefault(SwitchDefault node) {
+    _handleSwitchMember(node, () => super.visitSwitchDefault(node));
+  }
 
   // Dart 3 pattern-matching `switch`
   @override
-  void visitSwitchPatternCase(SwitchPatternCase node) =>
-      _handleSwitchMember(node, () => super.visitSwitchPatternCase(node));
+  void visitSwitchPatternCase(SwitchPatternCase node) {
+    _handleSwitchMember(node, () => super.visitSwitchPatternCase(node));
+  }
 
   @override
   void visitIfStatement(IfStatement node) {
     super.visitIfStatement(node);
-    final elseKeyword = node.elseKeyword;
-    if (elseKeyword != null) {
-      final thenEndLine =
-          _lines.getLocation(node.thenStatement.endToken.end).lineNumber;
-      var firstLine = _lines.getLocation(elseKeyword.offset).lineNumber;
-      for (Token? comment = elseKeyword.precedingComments;
-          comment != null;
-          comment = comment.next) {
-        final commentLine = _lines.getLocation(comment.offset).lineNumber;
-        if (commentLine < firstLine) {
-          firstLine = commentLine;
-        }
-      }
-
-      final blankLinesBeforeElse = firstLine - thenEndLine - 1;
-      if (blankLinesBeforeElse > 0) {
-        _reporter.atToken(elseKeyword, _code);
-      }
-    }
+    _validateIfStatement(node);
   }
 
   @override
   void visitCascadeExpression(CascadeExpression node) {
     if (node.cascadeSections.isNotEmpty) {
-      _checkNodes(node.cascadeSections, node.target.endToken);
+      _validateNodes(node.cascadeSections, node.target.endToken);
     }
     super.visitCascadeExpression(node);
   }
 
   @override
   void visitListLiteral(ListLiteral node) {
-    _checkNodes(node.elements, node.leftBracket);
+    _validateNodes(node.elements, node.leftBracket);
     super.visitListLiteral(node);
   }
 
   @override
   void visitSetOrMapLiteral(SetOrMapLiteral node) {
-    _checkNodes(node.elements, node.leftBracket);
+    _validateNodes(node.elements, node.leftBracket);
     super.visitSetOrMapLiteral(node);
   }
 
   @override
   void visitBinaryExpression(BinaryExpression node) {
-    final prevLine =
-        _lines.getLocation(node.leftOperand.endToken.end).lineNumber;
-    final token = node.rightOperand.beginToken;
-    var firstLine = _lines.getLocation(token.offset).lineNumber;
-    final hasComment = token.precedingComments != null;
-    var lastCommentLine = firstLine;
-    for (Token? comment = token.precedingComments;
-        comment != null;
-        comment = comment.next) {
-      final commentLine = _lines.getLocation(comment.offset).lineNumber;
-      if (commentLine < firstLine) {
-        firstLine = commentLine;
-      }
-      lastCommentLine = _lines.getLocation(comment.end).lineNumber;
-    }
-
-    final blankLinesBefore = firstLine - prevLine - 1;
-    final blankLinesAfter = hasComment
-        ? _lines.getLocation(token.offset).lineNumber - lastCommentLine - 1
-        : 0;
-
-    if (blankLinesBefore > 0 || (hasComment && blankLinesAfter > 0)) {
-      _reporter.atToken(token, _code);
-    }
+    _validateBinaryExpression(node);
     super.visitBinaryExpression(node);
   }
 
@@ -131,135 +94,246 @@ class _Visitor extends RecursiveAstVisitor<void> {
     dynamic node,
     void Function() superCall,
   ) {
-    _checkStatements(node.statements, node.colon, null);
+    _validateStatements(node.statements, node.colon, null);
     superCall();
   }
 
-  void _checkStatements(
+  void _validateStatements(
     NodeList<Statement> statements,
     Token? start,
     Token? end,
   ) {
-    var prevLine =
-        start != null ? _lines.getLocation(start.end).lineNumber : null;
-    Statement? previous;
+    int? prevLine = start != null ? _lineAfter(start) : null;
+    Statement? prevStatement;
 
     for (final current in statements) {
-      final statementLine =
-          _lines.getLocation(current.beginToken.offset).lineNumber;
-      var firstLine = statementLine;
-      final hasComment = current.beginToken.precedingComments != null;
-      var lastCommentLine = statementLine;
-      for (Token? comment = current.beginToken.precedingComments;
-          comment != null;
-          comment = comment.next) {
-        final commentLine = _lines.getLocation(comment.offset).lineNumber;
-        if (commentLine < firstLine) {
-          firstLine = commentLine;
-        }
-        lastCommentLine = _lines.getLocation(comment.end).lineNumber;
-      }
+      final info = _statementInfo(current, prevLine);
 
-      final previousLine =
-          prevLine ?? _lines.getLocation(current.beginToken.offset).lineNumber;
-      final blankLinesBefore = firstLine - previousLine - 1;
-      final blankLinesAfter =
-          hasComment ? statementLine - lastCommentLine - 1 : 0;
-
-      final sameDeclarationGroup = previous is VariableDeclarationStatement &&
-          current is VariableDeclarationStatement &&
-          blankLinesBefore == 0 &&
-          !hasComment;
-      final sameAssertGroup = previous is AssertStatement &&
-          current is AssertStatement &&
-          blankLinesBefore == 0 &&
-          !hasComment;
-      final sameYieldGroup = previous is YieldStatement &&
-          current is YieldStatement &&
-          blankLinesBefore == 0 &&
-          !hasComment;
-      final sameBreakGroup = previous is Statement &&
-          current is BreakStatement &&
-          blankLinesBefore == 0 &&
-          !hasComment;
-      final sameContinueGroup = previous is Statement &&
-          current is ContinueStatement &&
-          blankLinesBefore == 0 &&
-          !hasComment;
-      final sameInvocationGroup = previous is ExpressionStatement &&
-          current is ExpressionStatement &&
-          previous.expression is InvocationExpression &&
-          current.expression is InvocationExpression &&
-          blankLinesBefore == 0 &&
-          !hasComment;
-      final sameAwaitGroup = previous is ExpressionStatement &&
-          current is ExpressionStatement &&
-          previous.expression is AwaitExpression &&
-          current.expression is AwaitExpression &&
-          blankLinesBefore == 0 &&
-          !hasComment;
-
-      final isFirst = previous == null;
-      if (isFirst) {
-        if (blankLinesBefore > 0) {
-          _reporter.atToken(current.beginToken, _code);
-        } else if (hasComment && blankLinesAfter != 1) {
-          _reporter.atToken(current.beginToken, _code);
-        }
-      } else if (!sameDeclarationGroup &&
-          !sameAssertGroup &&
-          !sameYieldGroup &&
-          !sameBreakGroup &&
-          !sameContinueGroup &&
-          !sameInvocationGroup &&
-          !sameAwaitGroup &&
-          (blankLinesBefore != 1 || (hasComment && blankLinesAfter != 1))) {
+      if (_shouldReport(prevStatement, info)) {
         _reporter.atToken(current.beginToken, _code);
       }
 
-      prevLine = _lines.getLocation(current.endToken.end).lineNumber;
-      previous = current;
+      prevLine = _lineAfter(current.endToken);
+      prevStatement = current;
     }
 
-    if (end != null && prevLine != null) {
-      final closingLine = _lines.getLocation(end.offset).lineNumber;
-      final blankLinesAfterLast = closingLine - prevLine! - 1;
-      if (blankLinesAfterLast > 0) {
-        _reporter.atToken(end, _code);
-      }
+    if (_hasTrailingBlank(prevLine, end)) {
+      _reporter.atToken(end!, _code);
     }
   }
 
-  void _checkNodes(
-    NodeList<AstNode> nodes,
-    Token start,
+  bool _hasTrailingBlank(int? prevLine, Token? end) {
+    return end != null &&
+        prevLine != null &&
+        _lineOf(end.offset) - prevLine - 1 > 0;
+  }
+
+  int _lineAfter(Token token) => _lineOf(token.end);
+
+  _StatementInfo _statementInfo(Statement node, int? prevLine) {
+    final token = node.beginToken;
+    final (firstLine, lastLine, hasComment) = _commentInfo(token);
+    final currentLine = _lineOf(token.offset);
+
+    final blankBefore = firstLine - (prevLine ?? firstLine) - 1;
+    final blankAfter = hasComment ? currentLine - lastLine - 1 : 0;
+
+    return _StatementInfo(
+      current: node,
+      blankBefore: blankBefore,
+      blankAfter: blankAfter,
+      hasComment: hasComment,
+    );
+  }
+
+  bool _shouldReport(Statement? prev, _StatementInfo info) {
+    if (prev == null) {
+      return info.blankBefore > 0 || (info.hasComment && info.blankAfter != 1);
+    }
+
+    if (_isSameGroup(prev, info.current, info.blankBefore, info.hasComment)) {
+      return false;
+    }
+
+    return info.blankBefore != 1 || (info.hasComment && info.blankAfter != 1);
+  }
+
+  bool _isSameGroup(
+    Statement prev,
+    Statement curr,
+    int blanks,
+    bool hasComment,
   ) {
-    var prevLine = _lines.getLocation(start.end).lineNumber;
+    if (blanks != 0 || hasComment) {
+      return false;
+    }
+
+    return _sameDeclaration(prev, curr) ||
+        _sameAssert(prev, curr) ||
+        _sameYield(prev, curr) ||
+        _sameBreak(prev, curr) ||
+        _sameContinue(prev, curr) ||
+        _sameInvocation(prev, curr) ||
+        _sameAwait(prev, curr);
+  }
+
+  bool _sameDeclaration(Statement a, Statement b) {
+    return a is VariableDeclarationStatement &&
+        b is VariableDeclarationStatement;
+  }
+
+  bool _sameAssert(Statement a, Statement b) {
+    return a is AssertStatement && b is AssertStatement;
+  }
+
+  bool _sameYield(Statement a, Statement b) {
+    return a is YieldStatement && b is YieldStatement;
+  }
+
+  bool _sameBreak(Statement a, Statement b) {
+    return b is BreakStatement;
+  }
+
+  bool _sameContinue(Statement a, Statement b) {
+    return b is ContinueStatement;
+  }
+
+  bool _sameInvocation(Statement a, Statement b) {
+    return a is ExpressionStatement &&
+        b is ExpressionStatement &&
+        a.expression is InvocationExpression &&
+        b.expression is InvocationExpression;
+  }
+
+  bool _sameAwait(Statement a, Statement b) {
+    return a is ExpressionStatement &&
+        b is ExpressionStatement &&
+        a.expression is AwaitExpression &&
+        b.expression is AwaitExpression;
+  }
+
+  void _validateIfStatement(IfStatement statement) {
+    final elseKeyword = statement.elseKeyword;
+    if (elseKeyword == null) {
+      return;
+    }
+
+    final thenEndLine = _lineOf(statement.thenStatement.endToken.end);
+    final firstElseLine = _firstElseLine(elseKeyword);
+
+    if (_hasExtraBlankLines(thenEndLine, firstElseLine)) {
+      _reporter.atToken(elseKeyword, _code);
+    }
+  }
+
+  int _firstElseLine(Token elseKeyword) {
+    var earliestLine = _lineOf(elseKeyword.offset);
+
+    for (Token? comment = elseKeyword.precedingComments;
+        comment != null;
+        comment = comment.next) {
+      final commentLine = _lineOf(comment.offset);
+      if (commentLine < earliestLine) {
+        earliestLine = commentLine;
+      }
+    }
+
+    return earliestLine;
+  }
+
+  bool _hasExtraBlankLines(int prevLine, int nextLine) {
+    return nextLine - prevLine - 1 > 0;
+  }
+
+  void _validateNodes(NodeList<AstNode> nodes, Token start) {
+    int prevLine = _lineOf(start.end);
+
     for (final node in nodes) {
       final token = node.beginToken;
-      var firstLine = _lines.getLocation(token.offset).lineNumber;
-      final hasComment = token.precedingComments != null;
-      var lastCommentLine = firstLine;
-      for (Token? comment = token.precedingComments;
-          comment != null;
-          comment = comment.next) {
-        final commentLine = _lines.getLocation(comment.offset).lineNumber;
-        if (commentLine < firstLine) {
-          firstLine = commentLine;
-        }
-        lastCommentLine = _lines.getLocation(comment.end).lineNumber;
-      }
+      final (firstLine, lastLine, hasComment) = _commentInfo(token);
 
-      final blankLinesBefore = firstLine - prevLine - 1;
-      final blankLinesAfter = hasComment
-          ? _lines.getLocation(token.offset).lineNumber - lastCommentLine - 1
-          : 0;
+      final blanksBefore = firstLine - prevLine - 1;
+      final blanksAfter = hasComment ? _lineOf(token.offset) - lastLine - 1 : 0;
 
-      if (blankLinesBefore > 0 || (hasComment && blankLinesAfter > 0)) {
+      if (_hasBlank(blanksBefore, blanksAfter)) {
         _reporter.atToken(token, _code);
       }
 
-      prevLine = _lines.getLocation(node.endToken.end).lineNumber;
+      prevLine = _lineOf(node.endToken.end);
     }
   }
+
+  bool _hasBlank(int before, int after) {
+    return before > 0 || after > 0;
+  }
+
+  void _validateBinaryExpression(BinaryExpression node) {
+    final token = node.rightOperand.beginToken;
+    final prevLine = _lineOf(node.leftOperand.endToken.end);
+    final info = _binaryInfo(token, prevLine);
+
+    if (_hasBinaryViolation(info)) {
+      _reporter.atToken(token, _code);
+    }
+  }
+
+  _BinaryInfo _binaryInfo(Token token, int prevLine) {
+    final (firstLine, lastLine, hasComment) = _commentInfo(token);
+    final currentLine = _lineOf(token.offset);
+
+    return _BinaryInfo(
+      blankBefore: firstLine - prevLine - 1,
+      blankAfter: hasComment ? currentLine - lastLine - 1 : 0,
+      hasComment: hasComment,
+    );
+  }
+
+  bool _hasBinaryViolation(_BinaryInfo info) {
+    return info.blankBefore > 0 || (info.hasComment && info.blankAfter > 0);
+  }
+
+  (int firstLine, int lastLine, bool hasComment) _commentInfo(Token token) {
+    int firstLine = _lineOf(token.offset);
+    int lastLine = firstLine;
+
+    for (Token? comment = token.precedingComments;
+        comment != null;
+        comment = comment.next) {
+      final startLine = _lineOf(comment.offset);
+      firstLine = startLine < firstLine ? startLine : firstLine;
+      lastLine = _lineOf(comment.end);
+    }
+
+    return (firstLine, lastLine, token.precedingComments != null);
+  }
+
+  int _lineOf(int offset) {
+    return _lines.getLocation(offset).lineNumber;
+  }
+}
+
+class _StatementInfo {
+  const _StatementInfo({
+    required this.current,
+    required this.blankBefore,
+    required this.blankAfter,
+    required this.hasComment,
+  });
+
+  final Statement current;
+  final int blankBefore;
+  final int blankAfter;
+  final bool hasComment;
+}
+
+class _BinaryInfo {
+  const _BinaryInfo({
+    required this.blankBefore,
+    required this.blankAfter,
+    required this.hasComment,
+  });
+
+  final int blankBefore;
+  final int blankAfter;
+  final bool hasComment;
 }
