@@ -1,3 +1,19 @@
 {
-  "one": "One"
+  "one": "One",
+  "youBookedTrip": "Заброньовано ваших посилок {count}",
+  "@youBookedTrip": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "minutesLimit": "Ви використали ліміт повідомлень.\nСпробуйте знову через {minutes} хв",
+  "@minutesLimit": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
 }
