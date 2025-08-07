@@ -80,3 +80,52 @@ void goodSeparatedSections() {
   return sum;
 }
 ```
+
+## localization_keys_consistency
+
+### Description:
+
+This rule ensures that all ARB files contain the same set of localization keys.
+
+### Motivation:
+
+When a key is missing in one or more ARB files, it can lead to runtime errors or missing text in the
+UI. Ensuring consistency across all localization files helps maintain a complete and reliable
+multilingual experience.
+
+### Example:
+
+```
+// lib/l10n/app_en.arb
+{
+  "hello": "Hello",
+  "welcome": "Welcome" // ← LINT
+}
+
+// lib/l10n/app_es.arb
+{
+  "hello": "Hola"
+}
+```
+
+## duplicate_localization_keys
+
+### Description:
+
+This rule flags any duplicate keys defined within a single ARB file.
+
+### Motivation:
+
+Duplicate localization keys can cause unexpected behavior, such as silently overriding earlier
+values or throwing errors during parsing. Keeping all keys unique in each file ensures clarity and
+prevents accidental overwrites.
+
+### Example:
+
+```
+{
+  "one": "One",
+  "one": "Uno",   // ← LINT
+  "two": "Two"
+}
+```
