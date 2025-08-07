@@ -6,4 +6,6 @@ custom_lint:
   rules:
     - avoid_commented_out_code
     - insert_line_between_sections
+    - localization_keys_consistency
+    - duplicate_localization_keys
 
