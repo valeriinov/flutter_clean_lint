@@ -1,6 +1,6 @@
 name: flutter_clean_lint
 description: "Custom lints for Flutter"
-version: 0.1.5
+version: 0.1.6
 homepage:
 
 environment:
