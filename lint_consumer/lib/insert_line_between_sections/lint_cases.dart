@@ -511,3 +511,21 @@ Future<void> badExtraAfterAwaitCall() async {
   print('after');
   print('after await');
 }
+
+// =====================  EXTRA IN ASSIGNMENTS  =====================
+
+class Test {
+  int _value1 = 0;
+  int _value2 = 0;
+  int _value3 = 0;
+
+  void badAssignValuesToFields() {
+    _value1 = 1;
+
+    // expect_lint: insert_line_between_sections
+    _value2 = 1;
+
+    // expect_lint: insert_line_between_sections
+    _value3 = 1;
+  }
+}

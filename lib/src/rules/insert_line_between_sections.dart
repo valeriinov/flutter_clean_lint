@@ -154,35 +154,44 @@ class _Visitor extends RecursiveAstVisitor<void> {
       return info.blankBefore > 0 || (info.hasComment && info.blankAfter != 1);
     }
 
-    if (_isSameGroup(prev, info.current, info.blankBefore, info.hasComment)) {
-      return false;
+    if (_isSameKind(prev, info.current)) {
+      return info.blankBefore != 0 || (info.hasComment && info.blankAfter != 0);
     }
 
     return info.blankBefore != 1 || (info.hasComment && info.blankAfter != 1);
   }
 
-  bool _isSameGroup(
-    Statement prev,
-    Statement curr,
-    int blanks,
-    bool hasComment,
-  ) {
-    if (blanks != 0 || hasComment) {
-      return false;
-    }
-
-    return _sameDeclaration(prev, curr) ||
+  bool _isSameKind(Statement prev, Statement curr) {
+    return _sameAwait(prev, curr) ||
+        _sameDeclaration(prev, curr) ||
         _sameAssert(prev, curr) ||
         _sameYield(prev, curr) ||
         _isCurrBreak(curr) ||
         _isCurrContinue(curr) ||
-        _sameInvocation(prev, curr) ||
-        _sameAwait(prev, curr);
+        _sameAssignment(prev, curr) ||
+        _sameInvocation(prev, curr);
   }
 
   bool _sameDeclaration(Statement prev, Statement curr) {
-    return prev is VariableDeclarationStatement &&
-        curr is VariableDeclarationStatement;
+    if (prev is! VariableDeclarationStatement ||
+        curr is! VariableDeclarationStatement) {
+      return false;
+    }
+
+    final prevAwait = _isAwaitDeclaration(prev);
+    final currAwait = _isAwaitDeclaration(curr);
+
+    return prevAwait == currAwait;
+  }
+
+  bool _isAwaitDeclaration(Statement statement) {
+    if (statement is! VariableDeclarationStatement) {
+      return false;
+    }
+
+    return statement.variables.variables.any(
+          (v) => v.initializer is AwaitExpression,
+    );
   }
 
   bool _sameAssert(Statement prev, Statement curr) {
@@ -208,11 +217,32 @@ class _Visitor extends RecursiveAstVisitor<void> {
         curr.expression is InvocationExpression;
   }
 
+  bool _sameAssignment(Statement prev, Statement curr) {
+    if (!_isAssignment(prev) || !_isAssignment(curr)) {
+      return false;
+    }
+
+    return !_isAwaitStatement(prev) && !_isAwaitStatement(curr);
+  }
+
+  bool _isAssignment(Statement statement) {
+    return statement is ExpressionStatement &&
+        statement.expression is AssignmentExpression;
+  }
+
   bool _sameAwait(Statement prev, Statement curr) {
-    return prev is ExpressionStatement &&
-        curr is ExpressionStatement &&
-        prev.expression is AwaitExpression &&
-        curr.expression is AwaitExpression;
+    return _isAwaitStatement(prev) && _isAwaitStatement(curr);
+  }
+
+  bool _isAwaitStatement(Statement statement) {
+    if (statement is! ExpressionStatement) {
+      return false;
+    }
+
+    final expr = statement.expression;
+
+    return expr is AwaitExpression ||
+        (expr is AssignmentExpression && expr.rightHandSide is AwaitExpression);
   }
 
   void _validateIfStatement(IfStatement statement) {
