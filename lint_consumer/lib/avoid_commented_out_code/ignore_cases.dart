@@ -12,6 +12,7 @@
 
 // ignore: avoid_as
 // ignore: avoid_print
+// ignore_for_file: avoid_commented_out_code
 
 // Looks like code but missing semicolon - should not lint
 // y = 3
@@ -23,6 +24,8 @@
 /** Multi-line doc */
 
 // INFO: This should be ignored
+
+// Reason: some reason here
 
 // FIXME: fix later
 

@@ -202,3 +202,17 @@ Future<void> goodAfterAwaitCall() async {
   print('after');
   print('after await');
 }
+
+// =====================  GOOD ASSIGNMENTS TO FIELDS  =====================
+
+class Test {
+  int _value1 = 0;
+  int _value2 = 0;
+  int _value3 = 0;
+
+  void goodAssignValuesToFields() {
+    _value1 = 1;
+    _value2 = 1;
+    _value3 = 1;
+  }
+}
