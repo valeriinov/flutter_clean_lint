@@ -86,10 +86,12 @@ abstract final class _Patterns {
     'IMPORTANT',
     'FIXME',
     'HACK',
+    'REASON',
     // Testing helpers
     'EXPECT_LINT',
     'NO_LINT',
     'IGNORE',
+    'IGNORE_FOR_FILE',
   ];
 
   static const List<String> codePatterns = [
