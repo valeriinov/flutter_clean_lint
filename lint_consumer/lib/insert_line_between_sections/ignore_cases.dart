@@ -1,3 +1,5 @@
+// ignore_for_file: dead_code, unused_field, unused_local_variable
+
 // =====================  SEPARATED CORRECTLY  =====================
 
 // ---------- Declarations / assignment ----------

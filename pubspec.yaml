@@ -1,15 +1,15 @@
 name: flutter_clean_lint
 description: "Custom lints for Flutter"
-version: 0.1.6
+version: 0.1.7
 homepage:
 
 environment:
   sdk: '>=3.4.3 <4.0.0'
 
 dependencies:
-  analyzer: ^7.4.4
-  analyzer_plugin:
-  custom_lint_builder: ^0.8.0
+  analyzer: ^8.1.1
+  analyzer_plugin: 0.13.7
+  custom_lint_builder: ^0.8.1
   path: ^1.9.1
 
 dev_dependencies:
