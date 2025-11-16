@@ -19,7 +19,7 @@ class InsertLineBetweenSections extends DartLintRule {
   @override
   Future<void> run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) async {
     final result = await resolver.getResolvedUnitResult();
@@ -30,7 +30,7 @@ class InsertLineBetweenSections extends DartLintRule {
 }
 
 class _Visitor extends RecursiveAstVisitor<void> {
-  final ErrorReporter _reporter;
+  final DiagnosticReporter _reporter;
   final LintCode _code;
   final LineInfo _lines;
 
@@ -190,7 +190,7 @@ class _Visitor extends RecursiveAstVisitor<void> {
     }
 
     return statement.variables.variables.any(
-          (v) => v.initializer is AwaitExpression,
+      (v) => v.initializer is AwaitExpression,
     );
   }
 

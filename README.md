@@ -16,11 +16,11 @@ packages, helping you enforce project-specific standards and practices.
 
 ```yaml
 dev_dependencies:
-  custom_lint: ^0.8.0
+  custom_lint: ^0.8.1
   flutter_clean_lint:
     git:
       url: https://github.com/valeriinov/flutter_clean_lint
-      ref: 0.1.6
+      ref: 0.1.7
 ```
 
 **analysis_options.yaml** - enable the plugin and activate rules:

@@ -1,3 +1,5 @@
+// ignore_for_file: dead_code, unused_field, unused_local_variable
+
 // =====================  MISSING  =====================
 
 // ---------- Declarations / assignment ----------
@@ -245,7 +247,7 @@ void badExtraInsideSwitchCase() {
   switch (seed) {
     case 0:
 
-    // expect_lint: insert_line_between_sections
+      // expect_lint: insert_line_between_sections
       print('zero');
       break;
     default:
@@ -339,7 +341,7 @@ void badExtraInsideSwitchMultipleCases() {
       break;
     case 2:
 
-    // expect_lint: insert_line_between_sections
+      // expect_lint: insert_line_between_sections
       print('two');
       break;
     case 3:
@@ -401,7 +403,7 @@ void badExtraInsideArrowLocal() {
 void badExtraInsideCascade() {
   final buffer = StringBuffer()
 
-  // expect_lint: insert_line_between_sections
+    // expect_lint: insert_line_between_sections
     ..write('a')
     ..write('b');
 

@@ -118,7 +118,6 @@
 // expect_lint: avoid_commented_out_code
 // const Text('You have pushed the button this many times:'),
 
-
 // expect_lint: avoid_commented_out_code
 // Column(
 // expect_lint: avoid_commented_out_code
@@ -174,7 +173,6 @@
 //     return const Placeholder();
 //   }
 // }
-
 
 // expect_lint: avoid_commented_out_code
 /*class TestWidget extends StatelessWidget {

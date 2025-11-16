@@ -20,7 +20,7 @@ class DuplicateLocalizationKeys extends LintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     final src = File(resolver.path).readAsStringSync();
@@ -34,7 +34,7 @@ class DuplicateLocalizationKeys extends LintRule {
         reporter.atOffset(
           offset: offset,
           length: entry.key.length + 2, // +2 for the quotes
-          errorCode: _code,
+          diagnosticCode: _code,
           arguments: [entry.key],
         );
       }

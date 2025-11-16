@@ -21,7 +21,7 @@ class LocalizationKeysConsistency extends LintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     final dir = Directory(p.dirname(resolver.path));
@@ -48,7 +48,7 @@ class LocalizationKeysConsistency extends LintRule {
       reporter.atOffset(
         offset: offset == -1 ? 0 : offset,
         length: key.length + 2, // +2 for the quotes
-        errorCode: _code,
+        diagnosticCode: _code,
         arguments: [key, missing.join(', ')],
       );
     }

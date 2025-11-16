@@ -4,8 +4,7 @@ environment:
   sdk: '>=3.4.3 <4.0.0'
 
 dev_dependencies:
-  custom_lint: ^0.8.0
+  custom_lint: ^0.8.1
   flutter_clean_lint:
     path: ..
-
 

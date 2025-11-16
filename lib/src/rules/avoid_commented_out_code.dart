@@ -17,7 +17,7 @@ class AvoidCommentedOutCode extends DartLintRule {
   @override
   Future<void> run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) async {
     final unit = (await resolver.getResolvedUnitResult()).unit;
@@ -27,7 +27,7 @@ class AvoidCommentedOutCode extends DartLintRule {
         reporter.atOffset(
           offset: comment.offset,
           length: comment.length,
-          errorCode: code,
+          diagnosticCode: code,
         );
       }
     }

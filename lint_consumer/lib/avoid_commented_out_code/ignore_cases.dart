@@ -20,7 +20,6 @@
 // Looks like code but missing brace - should not lint
 // if (false)
 
-
 /** Multi-line doc */
 
 // INFO: This should be ignored
