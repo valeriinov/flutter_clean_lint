@@ -7,4 +7,3 @@ dev_dependencies:
   custom_lint: ^0.8.1
   flutter_clean_lint:
     path: ..
-
