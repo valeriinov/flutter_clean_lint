@@ -8,7 +8,7 @@ This rule flags any code that is commented out in your Dart and Flutter files.
 
 Commented-out code fragments clutter your codebase, reduce readability, and often lead to confusion
 about whether a piece of code is still relevant. All changes are already tracked in version control
-systems (such as Git), so there’s no need to keep old or unused code in comments.
+systems (such as Git), so there's no need to keep old or unused code in comments.
 By enforcing this rule, you keep your project clean and focused only on active, working code.
 
 ### Example:
@@ -31,7 +31,7 @@ final result = calculate(value);
 ### Description:
 
 This rule enforces exactly one blank line between logically distinct sections of code inside a
-function body.It reports two kinds of violations:
+function body. It reports two kinds of violations:
 
 1. Missing blank line – when two unrelated code sections touch each other with no empty line
    in-between.
@@ -39,7 +39,7 @@ function body.It reports two kinds of violations:
 
 ### Motivation:
 
-Consistent vertical spacing makes code easier to scan and understand.A single blank line cleanly
+Consistent vertical spacing makes code easier to scan and understand. A single blank line cleanly
 separates what the code is doing from how the next step continues, while avoiding both visual
 noise (too many empty lines) and tightly packed blocks (no empty lines). Enforcing this rule keeps
 functions readable, highlights logical groupings, and aligns with common style guides.
@@ -77,55 +77,6 @@ void goodSeparatedSections() {
 
   final sum = a + b;
 
-  return sum;
-}
-```
-
-## localization_keys_consistency
-
-### Description:
-
-This rule ensures that all ARB files contain the same set of localization keys.
-
-### Motivation:
-
-When a key is missing in one or more ARB files, it can lead to runtime errors or missing text in the
-UI. Ensuring consistency across all localization files helps maintain a complete and reliable
-multilingual experience.
-
-### Example:
-
-```
-// lib/l10n/app_en.arb
-{
-  "hello": "Hello",
-  "welcome": "Welcome" // ← LINT
-}
-
-// lib/l10n/app_es.arb
-{
-  "hello": "Hola"
-}
-```
-
-## duplicate_localization_keys
-
-### Description:
-
-This rule flags any duplicate keys defined within a single ARB file.
-
-### Motivation:
-
-Duplicate localization keys can cause unexpected behavior, such as silently overriding earlier
-values or throwing errors during parsing. Keeping all keys unique in each file ensures clarity and
-prevents accidental overwrites.
-
-### Example:
-
-```
-{
-  "one": "One",
-  "one": "Uno",   // ← LINT
-  "two": "Two"
+  print(sum);
 }
 ```

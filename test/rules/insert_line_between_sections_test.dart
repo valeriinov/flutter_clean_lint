@@ -1,8 +1,38 @@
+// ignore_for_file: non_constant_identifier_names
+
+import 'package:analyzer_testing/analysis_rule/analysis_rule.dart';
+import 'package:flutter_clean_lint/src/rules/insert_line_between_sections.dart';
+import 'package:test_reflective_loader/test_reflective_loader.dart';
+
+import 'diagnostic_marker.dart';
+
+void main() {
+  defineReflectiveSuite(() {
+    defineReflectiveTests(InsertLineBetweenSectionsTest);
+  });
+}
+
+@reflectiveTest
+class InsertLineBetweenSectionsTest extends AnalysisRuleTest {
+  @override
+  void setUp() {
+    rule = InsertLineBetweenSections();
+
+    super.setUp();
+  }
+
+  Future<void> test_markedLintCases_should_reportExpectedDiagnostics() async {
+    await assertDiagnosticsFromMarkers(this, _lintCases);
+  }
+
+  Future<void> test_ignoreCases_should_notReportDiagnostics() async {
+    await assertNoDiagnostics(_ignoreCases);
+  }
+}
+
+const _lintCases = r'''
 // ignore_for_file: dead_code, unused_field, unused_local_variable
 
-// =====================  MISSING  =====================
-
-// ---------- Declarations / assignment ----------
 void badMissingBetweenDeclarationGroups() {
   final a = 1;
   final b = 2;
@@ -22,7 +52,6 @@ void badMissingAfterAssignmentBlock() {
   print(mapped);
 }
 
-// ---------- Control-statements ----------
 int badMissingIf() {
   final a = 1;
   final b = 2;
@@ -46,18 +75,10 @@ void badMissingAfterControlStatement() {
   print(b);
 }
 
-void badMissingBeforeFirstControl() {
-  // preliminary comment
-  // expect_lint: insert_line_between_sections
-  if (true) {
-    print('first');
-  }
-}
-
 void badLoopSequenceMissing() {
   final n = 3;
   // expect_lint: insert_line_between_sections
-  for (var i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++) {
     print(i);
   }
   // expect_lint: insert_line_between_sections
@@ -94,7 +115,6 @@ void badSwitchMissingAfterSwitch(int x) {
   print('tail');
 }
 
-// ---------- Try-catch ----------
 void badMissingAfterDeclarationBeforeTry() {
   final path = 'data.txt';
   // expect_lint: insert_line_between_sections
@@ -113,7 +133,6 @@ void badMissingAfterTry() {
   print('x');
 }
 
-// ---------- Early exit / assert / await ----------
 int badMissingBeforeEarlyReturn(int x) {
   final y = x * 2;
   // expect_lint: insert_line_between_sections
@@ -136,15 +155,14 @@ Future<void> badAsyncMissing() async {
   print(data);
 }
 
-// ---------- Local constructs ----------
 void badMissingBeforeLocalFunction() {
   final base = 2;
   // expect_lint: insert_line_between_sections
-  int square(int v) => v * v;
+  int square(int value) => value * value;
   // expect_lint: insert_line_between_sections
-  final s = square(base);
+  final squared = square(base);
 
-  print(s);
+  print(squared);
 }
 
 void badCascadeMissingAfter() {
@@ -155,7 +173,6 @@ void badCascadeMissingAfter() {
   print(buffer.toString());
 }
 
-// ---------- Complex ----------
 void badComplexCase() {
   final a = 1;
   final b = 2;
@@ -167,7 +184,7 @@ void badComplexCase() {
   final c = 2;
   // expect_lint: insert_line_between_sections
   for (int i = 0; i < b; i++) {
-    print(i);
+    print(i + c);
   }
   // expect_lint: insert_line_between_sections
   while (true) {
@@ -175,44 +192,6 @@ void badComplexCase() {
   }
 }
 
-void badNestedBlocks() {
-  final a = 1;
-
-  if (a == 1) {
-    final b = 2;
-    // expect_lint: insert_line_between_sections
-    if (b == 2) {
-      print('nested');
-    }
-  }
-
-  print(a);
-}
-
-void badMixed() {
-  final seed = 1;
-  // expect_lint: insert_line_between_sections
-  try {
-    print(seed);
-  } catch (_) {}
-  // expect_lint: insert_line_between_sections
-  switch (seed) {
-    case 0:
-      print('zero');
-    default:
-      print('other');
-  }
-  // expect_lint: insert_line_between_sections
-  for (var i = 0; i < 2; i++) {
-    print(i);
-  }
-  // expect_lint: insert_line_between_sections
-  return;
-}
-
-// =====================  EXTRA  =====================
-
-// ---------- Declarations / block edges ----------
 void badExtraBetweenConsecutiveDeclarations() {
   final a = 1;
   final b = 2;
@@ -240,7 +219,6 @@ void badExtraBeforeClosingBrace() {
   }
 }
 
-// ---------- Inside control-statements ----------
 void badExtraInsideSwitchCase() {
   final seed = 0;
 
@@ -256,7 +234,7 @@ void badExtraInsideSwitchCase() {
 }
 
 void badExtraInsideLoop() {
-  for (var i = 0; i < 1; i++) {
+  for (int i = 0; i < 1; i++) {
 
     // expect_lint: insert_line_between_sections
     print(i);
@@ -264,7 +242,7 @@ void badExtraInsideLoop() {
 }
 
 void badExtraInsideWhile() {
-  var i = 0;
+  int i = 0;
 
   while (i < 1) {
 
@@ -273,36 +251,12 @@ void badExtraInsideWhile() {
   }
 }
 
-void badExtraInsideDo() {
-  var i = 0;
-
-  do {
-
-    // expect_lint: insert_line_between_sections
-    i++;
-  } while (i < 1);
-}
-
 void badExtraInsideTry() {
   try {
 
     // expect_lint: insert_line_between_sections
     print('try');
   } catch (_) {}
-}
-
-void badExtraInsideCatchFinally() {
-  try {
-    throw 'e';
-  } catch (_) {
-
-    // expect_lint: insert_line_between_sections
-    print('caught');
-  } finally {
-
-    // expect_lint: insert_line_between_sections
-    print('finally');
-  }
 }
 
 void badExtraBeforeElse() {
@@ -318,48 +272,15 @@ void badExtraBeforeElse() {
   }
 }
 
-void badExtraInsideIfElseChain() {
-  final x = 1;
-
-  if (x == 0) {
-    print('zero');
-  } else if (x == 1) {
-
-    // expect_lint: insert_line_between_sections
-    print('one');
-  } else {
-    print('other');
-  }
-}
-
-void badExtraInsideSwitchMultipleCases() {
-  final value = 2;
-
-  switch (value) {
-    case 1:
-      print('one');
-      break;
-    case 2:
-
-      // expect_lint: insert_line_between_sections
-      print('two');
-      break;
-    case 3:
-      print('three');
-      break;
-  }
-}
-
-// ---------- Early exit / assert / await ----------
 void badExtraBeforeReturn() {
-  final v = 1;
+  final value = 1;
 
   // expect_lint: insert_line_between_sections
   return;
 }
 
 void badExtraBeforeBreak() {
-  for (var i = 0; i < 1; i++) {
+  for (int i = 0; i < 1; i++) {
 
     // expect_lint: insert_line_between_sections
     break;
@@ -374,13 +295,12 @@ void badExtraInsideAssertGroup() {
 }
 
 Future<void> badExtraBeforeAwait() async {
-  final v = Future.value(1);
+  final value = Future.value(1);
 
   // expect_lint: insert_line_between_sections
-  print(await v);
+  print(await value);
 }
 
-// ---------- Local constructs & literals ----------
 void badExtraInsideLocalFunction() {
   int helper(int x) {
 
@@ -444,7 +364,7 @@ void badExtraInsideSetLiteral() {
   print(set.length);
 }
 
-Iterable<void> badExtraInsideSyncGenerator() sync* {
+Iterable<int> badExtraInsideSyncGenerator() sync* {
   yield 1;
 
   // expect_lint: insert_line_between_sections
@@ -466,10 +386,6 @@ int badMultipleBlankLinesBeforeReturn(int x) {
   return y;
 }
 
-// =====================  MISSING (calls)  =====================
-
-// ---------- Method calls ----------
-
 Future<void> badMissingBetweenCallAndAwait() async {
   print('before');
   print('before await');
@@ -486,9 +402,6 @@ Future<void> badMissingAfterAwaitCall() async {
   print('after await');
 }
 
-// =====================  EXTRA (calls)  =====================
-
-// ---------- Method calls ----------
 void badExtraBetweenAssignmentAndCall() {
   final value = 1;
 
@@ -514,8 +427,6 @@ Future<void> badExtraAfterAwaitCall() async {
   print('after await');
 }
 
-// =====================  EXTRA IN ASSIGNMENTS  =====================
-
 class Test {
   int _value1 = 0;
   int _value2 = 0;
@@ -531,3 +442,212 @@ class Test {
     _value3 = 1;
   }
 }
+''';
+
+const _ignoreCases = r'''
+// ignore_for_file: dead_code, unused_field, unused_local_variable
+
+void goodBetweenDeclarationGroups() {
+  final a = 1;
+  final b = 2;
+  final sum = a + b;
+  final diff = a - b;
+
+  print(sum + diff);
+}
+
+void goodAfterAssignmentBlock() {
+  final items = [1, 2, 3];
+  final doubled = items.map((e) => e * 2).toList();
+
+  print(doubled);
+}
+
+int goodIf() {
+  final a = 1;
+  final b = 2;
+
+  if (a + b == 3) {
+    print('Sum is 3');
+  }
+
+  return a + b;
+}
+
+void goodAfterControlStatement() {
+  final a = 1;
+
+  if (a > 0) {
+    print(a);
+  }
+
+  final b = 2;
+
+  print(b);
+}
+
+void goodLoopSequence() {
+  final n = 2;
+
+  for (int i = 0; i < n; i++) {
+    print(i);
+  }
+
+  while (false) {
+    break;
+  }
+
+  do {
+    break;
+  } while (false);
+}
+
+void goodSwitch(int x) {
+  final value = x;
+
+  switch (value) {
+    case 0:
+      print('zero');
+    case 1:
+      print('one');
+    default:
+      print('other');
+  }
+
+  print('done');
+}
+
+void goodBeforeTry() {
+  final path = 'data.txt';
+
+  try {
+    print(path);
+  } catch (_) {}
+
+  print('after');
+}
+
+int goodBeforeEarlyReturn(int x) {
+  final y = x * 2;
+
+  return y;
+}
+
+int goodAfterAssert(int x) {
+  assert(x >= 0);
+
+  final y = x + 1;
+
+  return y;
+}
+
+Future<void> goodAwait() async {
+  final length = await Future.value('url'.length);
+
+  print(length);
+}
+
+void goodBeforeLocalFunction() {
+  final base = 2;
+
+  int square(int value) => value * value;
+
+  final squared = square(base);
+
+  print(squared);
+}
+
+void goodCascade() {
+  final buffer = StringBuffer()
+    ..write('a')
+    ..write('b');
+
+  print(buffer.toString());
+}
+
+void goodComplex() {
+  final a = 1;
+
+  if (a == 1) {
+    print('condition');
+  }
+
+  for (int i = 0; i < 1; i++) {
+    print(i);
+  }
+
+  while (false) {
+    break;
+  }
+}
+
+void goodNoExtraBetweenDeclarations() {
+  final a = 1;
+  final b = 2;
+  final c = 3;
+  final d = 4;
+
+  print(a + b + c + d);
+}
+
+void goodNoExtraAtBlockStart() {
+  if (true) {
+    print('work');
+  }
+}
+
+void goodNoExtraInsideTry() {
+  try {
+    print('try');
+  } catch (_) {}
+}
+
+void goodNoExtraInsideCollectionLiteral() {
+  final list = <int>[1, 2, 3];
+
+  print(list.length);
+}
+
+Iterable<int> goodNoExtraInsideGenerator() sync* {
+  yield 1;
+  yield 2;
+}
+
+int singleLine() => 1;
+
+void emptyBody() {}
+
+void onlyDeclarations() {
+  final a = 1;
+  final b = 2;
+  final c = a + b;
+}
+
+Future<void> goodBetweenCallAndAwait() async {
+  print('before');
+  print('before await');
+
+  await Future.value(1);
+  await Future.value(2);
+}
+
+Future<void> goodAfterAwaitCall() async {
+  await Future.value(1);
+  await Future.value(2);
+
+  print('after');
+  print('after await');
+}
+
+class Test {
+  int _value1 = 0;
+  int _value2 = 0;
+  int _value3 = 0;
+
+  void goodAssignValuesToFields() {
+    _value1 = 1;
+    _value2 = 1;
+    _value3 = 1;
+  }
+}
+''';

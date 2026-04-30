@@ -1,3 +1,35 @@
+// ignore_for_file: non_constant_identifier_names
+
+import 'package:analyzer_testing/analysis_rule/analysis_rule.dart';
+import 'package:flutter_clean_lint/src/rules/avoid_commented_out_code.dart';
+import 'package:test_reflective_loader/test_reflective_loader.dart';
+
+import 'diagnostic_marker.dart';
+
+void main() {
+  defineReflectiveSuite(() {
+    defineReflectiveTests(AvoidCommentedOutCodeTest);
+  });
+}
+
+@reflectiveTest
+class AvoidCommentedOutCodeTest extends AnalysisRuleTest {
+  @override
+  void setUp() {
+    rule = AvoidCommentedOutCode();
+    super.setUp();
+  }
+
+  Future<void> test_markedLintCases_should_reportExpectedDiagnostics() async {
+    await assertDiagnosticsFromMarkers(this, _lintCases);
+  }
+
+  Future<void> test_ignoreCases_should_notReportDiagnostics() async {
+    await assertNoDiagnostics(_ignoreCases);
+  }
+}
+
+const _lintCases = r'''
 // expect_lint: avoid_commented_out_code
 // void foo() {}
 
@@ -23,7 +55,7 @@
 // if (true) {
 
 // expect_lint: avoid_commented_out_code
-// for (var i = 0; i < 10; i++) {
+// for (int i = 0; i < 10; i++) {
 
 // expect_lint: avoid_commented_out_code
 // while (false) {
@@ -183,3 +215,55 @@
     return const Placeholder();
   }
 }*/
+''';
+
+const _ignoreCases = r'''
+// ignore_for_file: todo, fixme, hack
+
+// Prose comment without code
+// This comment explains something.
+
+/// A doc comment example
+/// Another line of docs.
+
+// TODO: this is a todo comment
+// TODO(valeriinov): Refactor logic required
+// NOTE: this is a note comment
+
+// HH:MM
+
+// ignore: avoid_as
+// ignore: avoid_print
+// ignore_for_file: avoid_commented_out_code
+
+// Looks like code but missing semicolon - should not lint
+// y = 3
+
+// Looks like code but missing brace - should not lint
+// if (false)
+
+/** Multi-line doc */
+
+// INFO: This should be ignored
+
+// Reason: some reason here
+
+// FIXME: fix later
+
+// HACK: temporary hack
+
+// USAGE: call foo() first
+
+// Looks like variable but no semicolon
+// int a = 3
+
+// Looks like if without brace
+// if (true)
+
+// Looks like function without body
+// void bar()
+
+/* Not code comment */
+
+/* TODO: fix inside */
+''';
