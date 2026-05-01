@@ -290,13 +290,6 @@ void badExtraBeforeElse() {
   }
 }
 
-void badExtraBeforeReturn() {
-  final value = 1;
-
-  // expect_lint! insert_line_between_sections
-  return;
-}
-
 void badExtraBeforeBreak() {
   for (int i = 0; i < 1; i++) {
 
@@ -310,13 +303,6 @@ void badExtraInsideAssertGroup() {
 
   // expect_lint! insert_line_between_sections
   assert(true);
-}
-
-Future<void> badExtraBeforeAwait() async {
-  final value = Future.value(1);
-
-  // expect_lint! insert_line_between_sections
-  print(await value);
 }
 
 void badExtraInsideLocalFunction() {
@@ -404,6 +390,14 @@ int badMultipleBlankLinesBeforeReturn(int x) {
   return y;
 }
 
+void badExtraBeforeCommentedReturn(bool shouldStop) {
+  final canStop = shouldStop;
+
+  // The caller only needs the state check above.
+  // expect_lint! insert_line_between_sections
+  return;
+}
+
 Future<void> badMissingBetweenCallAndAwait() async {
   print('before');
   print('before await');
@@ -415,31 +409,6 @@ Future<void> badMissingBetweenCallAndAwait() async {
 Future<void> badMissingAfterAwaitCall() async {
   await Future.value(1);
   await Future.value(2);
-  // expect_lint! insert_line_between_sections
-  print('after');
-  print('after await');
-}
-
-void badExtraBetweenAssignmentAndCall() {
-  final value = 1;
-
-  // expect_lint! insert_line_between_sections
-  print(value);
-}
-
-Future<void> badExtraBetweenCallAndAwait() async {
-  print('before');
-  print('before await');
-
-  // expect_lint! insert_line_between_sections
-  await Future.value(1);
-  await Future.value(2);
-}
-
-Future<void> badExtraAfterAwaitCall() async {
-  await Future.value(1);
-  await Future.value(2);
-
   // expect_lint! insert_line_between_sections
   print('after');
   print('after await');
@@ -557,6 +526,61 @@ int goodAfterAssert(int x) {
   final y = x + 1;
 
   return y;
+}
+
+int goodCommentedReturn(int value) {
+  final result = value + 1;
+  // Return the prepared value without starting a new section.
+  return result;
+}
+
+int goodMultilineCommentedReturn(int value) {
+  final result = value + 1;
+  /*
+   * Return the prepared value without starting a new section.
+   * Keep the whole comment attached to the return statement.
+   */
+  return result;
+}
+
+int goodMultilineLineCommentedReturn(int value) {
+  final result = value + 1;
+  // Return the prepared value without starting a new section.
+  // Keep the whole comment attached to the return statement.
+  return result;
+}
+
+void goodCommentedIf(int value) {
+  final shouldPrint = value > 0;
+  // Print only positive values.
+  if (shouldPrint) {
+    print(value);
+  }
+}
+
+void goodCommentedSwitch(int value) {
+  final normalized = value.clamp(0, 1);
+  // Handle the normalized branch immediately after clamping.
+  switch (normalized) {
+    case 0:
+      print('zero');
+    default:
+      print('one');
+  }
+}
+
+void goodCommentedExecution(int value) {
+  final message = '$value';
+  // Send the prepared message without starting a new section.
+  print(message);
+}
+
+void goodCommentedAssignment(int value) {
+  var result = 0;
+  // Store the latest value in the local accumulator.
+  result = value;
+
+  print(result);
 }
 
 Future<void> goodAwait() async {

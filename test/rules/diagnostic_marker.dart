@@ -6,12 +6,63 @@ Future<void> assertDiagnosticsFromMarkers(
   AnalysisRuleTest test,
   String source,
 ) async {
+  final markedSource = _markedSource(source);
   final expected = [
-    for (final marker in _expectedLints(source))
+    for (final marker in markedSource.lints)
       test.lint(marker.offset, marker.length),
   ];
 
-  await test.assertDiagnostics(source, expected);
+  await test.assertDiagnostics(markedSource.source, expected);
+}
+
+_MarkedSource _markedSource(String source) {
+  final markerRanges = _markerLineRanges(source);
+  final cleanSource = _cleanSource(source, markerRanges);
+  final lints = [
+    for (final marker in _expectedLints(source))
+      _ExpectedLint(
+        offset: _cleanOffset(marker.offset, markerRanges),
+        length: marker.length,
+      ),
+  ];
+
+  return _MarkedSource(source: cleanSource, lints: lints);
+}
+
+List<_Range> _markerLineRanges(String source) {
+  final ranges = <_Range>[];
+  int searchStart = 0;
+
+  while (searchStart < source.length) {
+    final markerOffset = source.indexOf(_lintMarker, searchStart);
+
+    if (markerOffset == -1) return ranges;
+
+    ranges.add(
+      _Range(
+        start: _lineStart(source, markerOffset),
+        end: _nextLineStart(source, markerOffset),
+      ),
+    );
+
+    searchStart = _nextLineStart(source, markerOffset);
+  }
+
+  return ranges;
+}
+
+String _cleanSource(String source, List<_Range> ranges) {
+  final buffer = StringBuffer();
+  int start = 0;
+
+  for (final range in ranges) {
+    buffer.write(source.substring(start, range.start));
+    start = range.end;
+  }
+
+  buffer.write(source.substring(start));
+
+  return buffer.toString();
 }
 
 List<_ExpectedLint> _expectedLints(String source) {
@@ -43,6 +94,28 @@ List<_ExpectedLint> _expectedLints(String source) {
   return lints;
 }
 
+int _cleanOffset(int offset, List<_Range> ranges) {
+  int cleanOffset = offset;
+
+  for (final range in ranges) {
+    if (range.start >= offset) {
+      return cleanOffset;
+    }
+
+    cleanOffset -= range.length;
+  }
+
+  return cleanOffset;
+}
+
+int _lineStart(String source, int offset) {
+  final previousLineEnd = source.lastIndexOf('\n', offset);
+
+  if (previousLineEnd == -1) return 0;
+
+  return previousLineEnd + 1;
+}
+
 int? _nextCodeOffset(String source, int lineStart) {
   int currentLineStart = lineStart;
 
@@ -59,6 +132,14 @@ int? _nextCodeOffset(String source, int lineStart) {
   }
 
   return null;
+}
+
+int _nextLineStart(String source, int offset) {
+  final lineEnd = _lineEnd(source, offset);
+
+  if (lineEnd == source.length) return source.length;
+
+  return lineEnd + 1;
 }
 
 int _diagnosticLength(String source, int offset) {
@@ -85,20 +166,30 @@ int _diagnosticLength(String source, int offset) {
   return token.length;
 }
 
-int _nextLineStart(String source, int offset) {
-  final lineEnd = _lineEnd(source, offset);
-
-  if (lineEnd == source.length) return source.length;
-
-  return lineEnd + 1;
-}
-
 int _lineEnd(String source, int offset) {
   final lineEnd = source.indexOf('\n', offset);
 
   if (lineEnd == -1) return source.length;
 
   return lineEnd;
+}
+
+class _MarkedSource {
+  final String source;
+  final List<_ExpectedLint> lints;
+
+  const _MarkedSource({required this.source, required this.lints});
+}
+
+class _Range {
+  final int start;
+  final int end;
+
+  const _Range({required this.start, required this.end});
+
+  int get length {
+    return end - start;
+  }
 }
 
 class _ExpectedLint {
