@@ -1,3 +1,9 @@
+## 1.0.1
+
+- Improved `insert_line_between_sections` handling for statements with leading comments.
+- Updated marker-based rule tests so expectation comments are not analyzed as source code.
+- Clarified rule documentation for commented-out code detection and section spacing behavior.
+
 ## 1.0.0 - BREAKING
 
 - Migrated from `custom_lint` to `analysis_server_plugin`.

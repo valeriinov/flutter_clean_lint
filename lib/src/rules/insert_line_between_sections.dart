@@ -162,15 +162,23 @@ class _Visitor extends RecursiveAstVisitor<void> {
   }
 
   bool _shouldReport(Statement? prev, _StatementInfo info) {
+    if (info.hasComment) {
+      return _shouldReportCommentedStatement(info);
+    }
+
     if (prev == null) {
-      return info.blankBefore > 0 || (info.hasComment && info.blankAfter != 1);
+      return info.blankBefore > 0;
     }
 
     if (_isSameKind(prev, info.current)) {
-      return info.blankBefore != 0 || (info.hasComment && info.blankAfter != 0);
+      return info.blankBefore != 0;
     }
 
-    return info.blankBefore != 1 || (info.hasComment && info.blankAfter != 1);
+    return info.blankBefore != 1;
+  }
+
+  bool _shouldReportCommentedStatement(_StatementInfo info) {
+    return info.blankBefore > 0 || info.blankAfter > 0;
   }
 
   bool _isSameKind(Statement prev, Statement curr) {
@@ -185,8 +193,7 @@ class _Visitor extends RecursiveAstVisitor<void> {
   }
 
   bool _sameDeclaration(Statement prev, Statement curr) {
-    if (prev is! VariableDeclarationStatement ||
-        curr is! VariableDeclarationStatement) {
+    if (!_isDeclaration(prev) || !_isDeclaration(curr)) {
       return false;
     }
 
@@ -196,14 +203,23 @@ class _Visitor extends RecursiveAstVisitor<void> {
     return prevAwait == currAwait;
   }
 
+  bool _isDeclaration(Statement statement) {
+    return statement is VariableDeclarationStatement ||
+        statement is PatternVariableDeclarationStatement;
+  }
+
   bool _isAwaitDeclaration(Statement statement) {
-    if (statement is! VariableDeclarationStatement) {
-      return false;
+    if (statement is VariableDeclarationStatement) {
+      return statement.variables.variables.any(
+        (v) => v.initializer is AwaitExpression,
+      );
     }
 
-    return statement.variables.variables.any(
-      (v) => v.initializer is AwaitExpression,
-    );
+    if (statement is PatternVariableDeclarationStatement) {
+      return statement.declaration.expression is AwaitExpression;
+    }
+
+    return false;
   }
 
   bool _sameAssert(Statement prev, Statement curr) {

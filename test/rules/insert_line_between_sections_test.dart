@@ -21,7 +21,7 @@ class InsertLineBetweenSectionsTest extends AnalysisRuleTest {
     super.setUp();
   }
 
-  Future<void> test_markedLintCases_should_reportExpectedDiagnostics() async {
+  Future<void> test_lintCases_should_reportExpectedDiagnostics() async {
     await assertDiagnosticsFromMarkers(this, _lintCases);
   }
 
@@ -39,7 +39,7 @@ void badMissingBetweenDeclarationGroups() {
   final c = 3;
   final d = 4;
   final sum = a + b + c + d;
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   if (sum > 0) {
     print(sum);
   }
@@ -48,18 +48,18 @@ void badMissingBetweenDeclarationGroups() {
 void badMissingAfterAssignmentBlock() {
   final list = <int>[1, 2, 3];
   final mapped = list.map((e) => e * 2).toList();
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   print(mapped);
 }
 
 int badMissingIf() {
   final a = 1;
   final b = 2;
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   if (a + b == 3) {
     print('Sum is 3');
   }
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   return a + b;
 }
 
@@ -69,23 +69,41 @@ void badMissingAfterControlStatement() {
   if (a > 0) {
     print(a);
   }
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   final b = 2;
 
   print(b);
 }
 
+void badMissingAfterPatternDeclaration() {
+  final (a, b) = (1, 2);
+  // expect_lint! insert_line_between_sections
+  if (a > b) {
+    print(a);
+  }
+}
+
+void badMissingAfterControlBeforePattern(int x) {
+  if (x > 0) {
+    print(x);
+  }
+  // expect_lint! insert_line_between_sections
+  final (a, b) = (x, x + 1);
+
+  print(a + b);
+}
+
 void badLoopSequenceMissing() {
   final n = 3;
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   for (int i = 0; i < n; i++) {
     print(i);
   }
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   while (false) {
     break;
   }
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   do {
     break;
   } while (false);
@@ -93,7 +111,7 @@ void badLoopSequenceMissing() {
 
 void badSwitchMissingBeforeSwitch(int x) {
   final value = x;
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   switch (value) {
     case 0:
       print('zero');
@@ -111,13 +129,13 @@ void badSwitchMissingAfterSwitch(int x) {
     default:
       print('other');
   }
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   print('tail');
 }
 
 void badMissingAfterDeclarationBeforeTry() {
   final path = 'data.txt';
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   try {
     print(path);
   } catch (_) {}
@@ -129,19 +147,19 @@ void badMissingAfterTry() {
   try {
     print(path);
   } catch (_) {}
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   print('x');
 }
 
 int badMissingBeforeEarlyReturn(int x) {
   final y = x * 2;
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   return y;
 }
 
 int badMissingLineAfterAssert(int x) {
   assert(x >= 0);
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   final y = x + 1;
 
   return y;
@@ -151,15 +169,15 @@ Future<void> badAsyncMissing() async {
   final url = 'https://x';
 
   final data = await Future.value(url.length);
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   print(data);
 }
 
 void badMissingBeforeLocalFunction() {
   final base = 2;
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   int square(int value) => value * value;
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   final squared = square(base);
 
   print(squared);
@@ -169,24 +187,24 @@ void badCascadeMissingAfter() {
   final buffer = StringBuffer()
     ..write('a')
     ..write('b');
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   print(buffer.toString());
 }
 
 void badComplexCase() {
   final a = 1;
   final b = 2;
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   if (a == 1) {
     print('condition');
   }
 
   final c = 2;
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   for (int i = 0; i < b; i++) {
     print(i + c);
   }
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   while (true) {
     break;
   }
@@ -196,7 +214,7 @@ void badExtraBetweenConsecutiveDeclarations() {
   final a = 1;
   final b = 2;
 
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   final c = 3;
   final d = 4;
 
@@ -206,7 +224,7 @@ void badExtraBetweenConsecutiveDeclarations() {
 void badExtraAtBlockStart() {
   if (true) {
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
     print('work');
   }
 }
@@ -215,7 +233,7 @@ void badExtraBeforeClosingBrace() {
   if (true) {
     print('x');
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
   }
 }
 
@@ -225,7 +243,7 @@ void badExtraInsideSwitchCase() {
   switch (seed) {
     case 0:
 
-      // expect_lint: insert_line_between_sections
+      // expect_lint! insert_line_between_sections
       print('zero');
       break;
     default:
@@ -236,7 +254,7 @@ void badExtraInsideSwitchCase() {
 void badExtraInsideLoop() {
   for (int i = 0; i < 1; i++) {
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
     print(i);
   }
 }
@@ -246,7 +264,7 @@ void badExtraInsideWhile() {
 
   while (i < 1) {
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
     i++;
   }
 }
@@ -254,7 +272,7 @@ void badExtraInsideWhile() {
 void badExtraInsideTry() {
   try {
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
     print('try');
   } catch (_) {}
 }
@@ -266,23 +284,16 @@ void badExtraBeforeElse() {
     print('zero');
   }
 
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   else {
     print('non-zero');
   }
 }
 
-void badExtraBeforeReturn() {
-  final value = 1;
-
-  // expect_lint: insert_line_between_sections
-  return;
-}
-
 void badExtraBeforeBreak() {
   for (int i = 0; i < 1; i++) {
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
     break;
   }
 }
@@ -290,21 +301,14 @@ void badExtraBeforeBreak() {
 void badExtraInsideAssertGroup() {
   assert(1 == 1);
 
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   assert(true);
-}
-
-Future<void> badExtraBeforeAwait() async {
-  final value = Future.value(1);
-
-  // expect_lint: insert_line_between_sections
-  print(await value);
 }
 
 void badExtraInsideLocalFunction() {
   int helper(int x) {
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
     return x + 1;
   }
 
@@ -314,7 +318,7 @@ void badExtraInsideLocalFunction() {
 void badExtraInsideArrowLocal() {
   int helper(int x) => x +
 
-      // expect_lint: insert_line_between_sections
+      // expect_lint! insert_line_between_sections
       1;
 
   print(helper(1));
@@ -323,7 +327,7 @@ void badExtraInsideArrowLocal() {
 void badExtraInsideCascade() {
   final buffer = StringBuffer()
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
     ..write('a')
     ..write('b');
 
@@ -334,7 +338,7 @@ void badExtraInsideCollectionLiteral() {
   final list = <int>[
     1,
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
     2,
     3,
   ];
@@ -346,7 +350,7 @@ void badExtraInsideMapLiteral() {
   final map = <String, int>{
     'a': 1,
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
     'b': 2,
   };
 
@@ -357,7 +361,7 @@ void badExtraInsideSetLiteral() {
   final set = <int>{
     1,
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
     2,
   };
 
@@ -367,14 +371,14 @@ void badExtraInsideSetLiteral() {
 Iterable<int> badExtraInsideSyncGenerator() sync* {
   yield 1;
 
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   yield 2;
 }
 
 Stream<int> badExtraInsideAsyncGenerator() async* {
   yield 1;
 
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   yield 2;
 }
 
@@ -382,14 +386,22 @@ int badMultipleBlankLinesBeforeReturn(int x) {
   final y = x * 2;
 
 
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   return y;
+}
+
+void badExtraBeforeCommentedReturn(bool shouldStop) {
+  final canStop = shouldStop;
+
+  // The caller only needs the state check above.
+  // expect_lint! insert_line_between_sections
+  return;
 }
 
 Future<void> badMissingBetweenCallAndAwait() async {
   print('before');
   print('before await');
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   await Future.value(1);
   await Future.value(2);
 }
@@ -397,32 +409,7 @@ Future<void> badMissingBetweenCallAndAwait() async {
 Future<void> badMissingAfterAwaitCall() async {
   await Future.value(1);
   await Future.value(2);
-  // expect_lint: insert_line_between_sections
-  print('after');
-  print('after await');
-}
-
-void badExtraBetweenAssignmentAndCall() {
-  final value = 1;
-
-  // expect_lint: insert_line_between_sections
-  print(value);
-}
-
-Future<void> badExtraBetweenCallAndAwait() async {
-  print('before');
-  print('before await');
-
-  // expect_lint: insert_line_between_sections
-  await Future.value(1);
-  await Future.value(2);
-}
-
-Future<void> badExtraAfterAwaitCall() async {
-  await Future.value(1);
-  await Future.value(2);
-
-  // expect_lint: insert_line_between_sections
+  // expect_lint! insert_line_between_sections
   print('after');
   print('after await');
 }
@@ -435,10 +422,10 @@ class Test {
   void badAssignValuesToFields() {
     _value1 = 1;
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
     _value2 = 1;
 
-    // expect_lint: insert_line_between_sections
+    // expect_lint! insert_line_between_sections
     _value3 = 1;
   }
 }
@@ -541,6 +528,61 @@ int goodAfterAssert(int x) {
   return y;
 }
 
+int goodCommentedReturn(int value) {
+  final result = value + 1;
+  // Return the prepared value without starting a new section.
+  return result;
+}
+
+int goodMultilineCommentedReturn(int value) {
+  final result = value + 1;
+  /*
+   * Return the prepared value without starting a new section.
+   * Keep the whole comment attached to the return statement.
+   */
+  return result;
+}
+
+int goodMultilineLineCommentedReturn(int value) {
+  final result = value + 1;
+  // Return the prepared value without starting a new section.
+  // Keep the whole comment attached to the return statement.
+  return result;
+}
+
+void goodCommentedIf(int value) {
+  final shouldPrint = value > 0;
+  // Print only positive values.
+  if (shouldPrint) {
+    print(value);
+  }
+}
+
+void goodCommentedSwitch(int value) {
+  final normalized = value.clamp(0, 1);
+  // Handle the normalized branch immediately after clamping.
+  switch (normalized) {
+    case 0:
+      print('zero');
+    default:
+      print('one');
+  }
+}
+
+void goodCommentedExecution(int value) {
+  final message = '$value';
+  // Send the prepared message without starting a new section.
+  print(message);
+}
+
+void goodCommentedAssignment(int value) {
+  var result = 0;
+  // Store the latest value in the local accumulator.
+  result = value;
+
+  print(result);
+}
+
 Future<void> goodAwait() async {
   final length = await Future.value('url'.length);
 
@@ -589,6 +631,28 @@ void goodNoExtraBetweenDeclarations() {
 
   print(a + b + c + d);
 }
+
+void goodNoExtraBetweenRecordPatternDeclarations() {
+  final targetBox = (top: 1, bottom: 2);
+  final viewportBox = (top: 3, bottom: 4);
+  final (targetTop, targetBottom) = _resolveVerticalRange(targetBox);
+  final (viewportTop, viewportBottom) = _resolveVerticalRange(viewportBox);
+
+  print(targetTop + targetBottom + viewportTop + viewportBottom);
+}
+
+(int, int) _resolveVerticalRange(({int top, int bottom}) box) {
+  return (box.top, box.bottom);
+}
+
+Future<void> goodNoExtraBetweenAwaitPatternDeclarations() async {
+  final (a, b) = await _fetchPair();
+  final (c, d) = await _fetchPair();
+
+  print(a + b + c + d);
+}
+
+Future<(int, int)> _fetchPair() async => (1, 2);
 
 void goodNoExtraAtBlockStart() {
   if (true) {
