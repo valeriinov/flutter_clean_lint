@@ -75,6 +75,24 @@ void badMissingAfterControlStatement() {
   print(b);
 }
 
+void badMissingAfterPatternDeclaration() {
+  final (a, b) = (1, 2);
+  // expect_lint! insert_line_between_sections
+  if (a > b) {
+    print(a);
+  }
+}
+
+void badMissingAfterControlBeforePattern(int x) {
+  if (x > 0) {
+    print(x);
+  }
+  // expect_lint! insert_line_between_sections
+  final (a, b) = (x, x + 1);
+
+  print(a + b);
+}
+
 void badLoopSequenceMissing() {
   final n = 3;
   // expect_lint! insert_line_between_sections
@@ -589,6 +607,28 @@ void goodNoExtraBetweenDeclarations() {
 
   print(a + b + c + d);
 }
+
+void goodNoExtraBetweenRecordPatternDeclarations() {
+  final targetBox = (top: 1, bottom: 2);
+  final viewportBox = (top: 3, bottom: 4);
+  final (targetTop, targetBottom) = _resolveVerticalRange(targetBox);
+  final (viewportTop, viewportBottom) = _resolveVerticalRange(viewportBox);
+
+  print(targetTop + targetBottom + viewportTop + viewportBottom);
+}
+
+(int, int) _resolveVerticalRange(({int top, int bottom}) box) {
+  return (box.top, box.bottom);
+}
+
+Future<void> goodNoExtraBetweenAwaitPatternDeclarations() async {
+  final (a, b) = await _fetchPair();
+  final (c, d) = await _fetchPair();
+
+  print(a + b + c + d);
+}
+
+Future<(int, int)> _fetchPair() async => (1, 2);
 
 void goodNoExtraAtBlockStart() {
   if (true) {
