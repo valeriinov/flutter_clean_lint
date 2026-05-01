@@ -100,9 +100,6 @@ abstract final class _Patterns {
     'FIXME',
     'HACK',
     'REASON',
-    // Testing helpers
-    'EXPECT_LINT',
-    'NO_LINT',
     'IGNORE',
     'IGNORE_FOR_FILE',
   ];

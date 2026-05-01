@@ -1,6 +1,6 @@
 import 'package:analyzer_testing/analysis_rule/analysis_rule.dart';
 
-const _lintMarker = '// expect_lint:';
+const _lintMarker = '// expect_lint!';
 
 Future<void> assertDiagnosticsFromMarkers(
   AnalysisRuleTest test,
