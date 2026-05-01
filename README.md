@@ -24,14 +24,14 @@ dev_dependencies:
   flutter_clean_lint:
     git:
       url: https://github.com/valeriinov/flutter_clean_lint
-      ref: 1.0.0
+      ref: 1.0.1
 ```
 
 **analysis_options.yaml** - enable the plugin:
 
 ```yaml
 plugins:
-  flutter_clean_lint: ^1.0.0
+  flutter_clean_lint: ^1.0.1
 ```
 
 The Dart rules are registered as warnings and work through `dart analyze`,
