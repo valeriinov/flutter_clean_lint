@@ -1,46 +1,59 @@
+import 'package:analyzer/analysis_rule/analysis_rule.dart';
+import 'package:analyzer/analysis_rule/rule_context.dart';
+import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/token.dart';
-import 'package:analyzer/error/listener.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/error/error.dart';
 
 /// Lints commented-out Dart code.
-class AvoidCommentedOutCode extends DartLintRule {
-  const AvoidCommentedOutCode()
-      : super(
-          code: const LintCode(
-            name: 'avoid_commented_out_code',
-            problemMessage: 'Avoid keeping commented-out code. '
-                'Use version control to restore when needed.',
-          ),
-        );
+class AvoidCommentedOutCode extends AnalysisRule {
+  static const _name = 'avoid_commented_out_code';
+  static const _description =
+      'Avoid keeping commented-out code. '
+      'Use version control to restore when needed.';
+  static const code = LintCode(_name, _description);
+
+  AvoidCommentedOutCode() : super(name: _name, description: _description);
 
   @override
-  Future<void> run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
-  ) async {
-    final unit = (await resolver.getResolvedUnitResult()).unit;
+  LintCode get diagnosticCode => code;
 
-    for (final comment in _allComments(unit)) {
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
+  ) {
+    registry.addCompilationUnit(this, _Visitor(this));
+  }
+}
+
+class _Visitor extends SimpleAstVisitor<void> {
+  final AvoidCommentedOutCode _rule;
+
+  _Visitor(this._rule);
+
+  @override
+  void visitCompilationUnit(CompilationUnit node) {
+    for (final comment in _allComments(node)) {
       if (_isCodeComment(comment.lexeme)) {
-        reporter.atOffset(
-          offset: comment.offset,
-          length: comment.length,
-          diagnosticCode: code,
-        );
+        _rule.reportAtOffset(comment.offset, comment.length);
       }
     }
   }
 
   Iterable<Token> _allComments(CompilationUnit unit) sync* {
-    for (Token t = unit.beginToken;; t = t.next!) {
+    Token? t = unit.beginToken;
+
+    while (t != null) {
       // comments "attached" to the current token
       for (Token? c = t.precedingComments; c != null; c = c.next) {
         yield c;
       }
       // exit the loop after processing EOF
-      if (t.isEof) break;
+      if (t.isEof) return;
+
+      t = t.next;
     }
   }
 

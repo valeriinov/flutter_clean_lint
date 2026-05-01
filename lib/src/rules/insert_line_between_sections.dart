@@ -1,40 +1,50 @@
+import 'package:analyzer/analysis_rule/analysis_rule.dart';
+import 'package:analyzer/analysis_rule/rule_context.dart';
+import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:analyzer/error/listener.dart';
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer/source/line_info.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 /// Ensures there is exactly one blank line between code sections inside function bodies.
-class InsertLineBetweenSections extends DartLintRule {
-  const InsertLineBetweenSections()
-      : super(
-          code: const LintCode(
-            name: 'insert_line_between_sections',
-            problemMessage:
-                'Separate distinct code sections with exactly one blank line. Do not insert blank lines within a single logical section.',
-          ),
-        );
+class InsertLineBetweenSections extends AnalysisRule {
+  static const _name = 'insert_line_between_sections';
+  static const _description =
+      'Separate distinct code sections with exactly one blank line. '
+      'Do not insert blank lines within a single logical section.';
+  static const code = LintCode(_name, _description);
+
+  InsertLineBetweenSections() : super(name: _name, description: _description);
 
   @override
-  Future<void> run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
-  ) async {
-    final result = await resolver.getResolvedUnitResult();
-    final lineInfo = result.lineInfo;
+  LintCode get diagnosticCode => code;
 
-    result.unit.visitChildren(_Visitor(reporter, code, lineInfo));
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
+  ) {
+    registry.addCompilationUnit(this, _CompilationUnitVisitor(this));
+  }
+}
+
+class _CompilationUnitVisitor extends SimpleAstVisitor<void> {
+  final InsertLineBetweenSections _rule;
+
+  _CompilationUnitVisitor(this._rule);
+
+  @override
+  void visitCompilationUnit(CompilationUnit node) {
+    node.visitChildren(_Visitor(_rule, node.lineInfo));
   }
 }
 
 class _Visitor extends RecursiveAstVisitor<void> {
-  final DiagnosticReporter _reporter;
-  final LintCode _code;
+  final InsertLineBetweenSections _rule;
   final LineInfo _lines;
 
-  _Visitor(this._reporter, this._code, this._lines);
+  _Visitor(this._rule, this._lines);
 
   @override
   void visitBlock(Block node) {
@@ -111,22 +121,24 @@ class _Visitor extends RecursiveAstVisitor<void> {
       final info = _statementInfo(current, prevLine);
 
       if (_shouldReport(prevStatement, info)) {
-        _reporter.atToken(current.beginToken, _code);
+        _rule.reportAtToken(current.beginToken);
       }
 
       prevLine = _lineAfter(current.endToken);
       prevStatement = current;
     }
 
-    if (_hasTrailingBlank(prevLine, end)) {
-      _reporter.atToken(end!, _code);
+    final endToken = end;
+
+    if (endToken == null || prevLine == null) return;
+
+    if (_hasTrailingBlank(prevLine, endToken)) {
+      _rule.reportAtToken(endToken);
     }
   }
 
-  bool _hasTrailingBlank(int? prevLine, Token? end) {
-    return end != null &&
-        prevLine != null &&
-        _lineOf(end.offset) - prevLine - 1 > 0;
+  bool _hasTrailingBlank(int prevLine, Token end) {
+    return _lineOf(end.offset) - prevLine - 1 > 0;
   }
 
   int _lineAfter(Token token) {
@@ -255,16 +267,18 @@ class _Visitor extends RecursiveAstVisitor<void> {
     final firstElseLine = _firstElseLine(elseKeyword);
 
     if (_hasExtraBlankLines(thenEndLine, firstElseLine)) {
-      _reporter.atToken(elseKeyword, _code);
+      _rule.reportAtToken(elseKeyword);
     }
   }
 
   int _firstElseLine(Token elseKeyword) {
     int firstElseLine = _lineOf(elseKeyword.offset);
 
-    for (Token? comment = elseKeyword.precedingComments;
-        comment != null;
-        comment = comment.next) {
+    for (
+      Token? comment = elseKeyword.precedingComments;
+      comment != null;
+      comment = comment.next
+    ) {
       final commentLine = _lineOf(comment.offset);
       if (commentLine < firstElseLine) {
         firstElseLine = commentLine;
@@ -289,7 +303,7 @@ class _Visitor extends RecursiveAstVisitor<void> {
       final blanksAfter = hasComment ? _lineOf(token.offset) - lastLine - 1 : 0;
 
       if (_hasBlank(blanksBefore, blanksAfter)) {
-        _reporter.atToken(token, _code);
+        _rule.reportAtToken(token);
       }
 
       prevLine = _lineOf(node.endToken.end);
@@ -306,7 +320,7 @@ class _Visitor extends RecursiveAstVisitor<void> {
     final info = _binaryInfo(token, prevLine);
 
     if (_hasBinaryViolation(info)) {
-      _reporter.atToken(token, _code);
+      _rule.reportAtToken(token);
     }
   }
 
@@ -329,9 +343,11 @@ class _Visitor extends RecursiveAstVisitor<void> {
     int firstLine = _lineOf(token.offset);
     int lastLine = firstLine;
 
-    for (Token? comment = token.precedingComments;
-        comment != null;
-        comment = comment.next) {
+    for (
+      Token? comment = token.precedingComments;
+      comment != null;
+      comment = comment.next
+    ) {
       final startLine = _lineOf(comment.offset);
       firstLine = startLine < firstLine ? startLine : firstLine;
       lastLine = _lineOf(comment.end);
