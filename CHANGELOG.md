@@ -1,3 +1,11 @@
+## 1.0.2
+
+- Updated `insert_line_between_sections` to enforce blank-line rules before comments
+  while keeping comments attached to the statement they describe.
+- Comments now require exactly one blank line before them when the statement kind changes,
+  and zero blank lines when the statement is the same kind as the previous one.
+- Updated tests and documentation to reflect the new comment attachment behavior.
+
 ## 1.0.1
 
 - Improved `insert_line_between_sections` handling for statements with leading comments.

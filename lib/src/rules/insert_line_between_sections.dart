@@ -162,8 +162,8 @@ class _Visitor extends RecursiveAstVisitor<void> {
   }
 
   bool _shouldReport(Statement? prev, _StatementInfo info) {
-    if (info.hasComment) {
-      return _shouldReportCommentedStatement(info);
+    if (info.hasComment && info.blankAfter > 0) {
+      return true;
     }
 
     if (prev == null) {
@@ -175,10 +175,6 @@ class _Visitor extends RecursiveAstVisitor<void> {
     }
 
     return info.blankBefore != 1;
-  }
-
-  bool _shouldReportCommentedStatement(_StatementInfo info) {
-    return info.blankBefore > 0 || info.blankAfter > 0;
   }
 
   bool _isSameKind(Statement prev, Statement curr) {

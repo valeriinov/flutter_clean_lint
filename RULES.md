@@ -44,7 +44,7 @@ It reports three kinds of violations:
    before `else`, inside a switch case, inside a collection literal, inside a cascade, or inside a
    binary expression.
 3. Detached leading comment – when a comment that belongs to the next statement has a blank line
-   before or after it.
+   after it (separating the comment from the statement).
 
 The rule treats a leading comment as part of the following statement. A comment explaining a
 `return`, `if`, `switch`, assignment, or function call must sit directly above that statement.
@@ -83,6 +83,7 @@ void badDetachedComment(bool shouldStop) {
   final canStop = shouldStop;
 
   // The caller only needs the state check above.
+
   return; // ← LINT
 }
 
@@ -103,12 +104,14 @@ void goodSeparatedSections() {
 // GOOD: Leading comments stay attached to the statements they describe.
 void goodCommentedStatements(int value) {
   final shouldPrint = value > 0;
+
   // Print only positive values.
   if (shouldPrint) {
     print(value);
   }
 
   final normalized = value.clamp(0, 1);
+
   // Handle the normalized branch immediately after clamping.
   switch (normalized) {
     case 0:
@@ -118,6 +121,7 @@ void goodCommentedStatements(int value) {
   }
 
   final message = '$value';
+
   // Send the prepared message without starting a new section.
   print(message);
 }

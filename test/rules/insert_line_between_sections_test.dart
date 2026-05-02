@@ -393,6 +393,7 @@ int badMultipleBlankLinesBeforeReturn(int x) {
 void badExtraBeforeCommentedReturn(bool shouldStop) {
   final canStop = shouldStop;
 
+
   // The caller only needs the state check above.
   // expect_lint! insert_line_between_sections
   return;
@@ -530,12 +531,14 @@ int goodAfterAssert(int x) {
 
 int goodCommentedReturn(int value) {
   final result = value + 1;
+
   // Return the prepared value without starting a new section.
   return result;
 }
 
 int goodMultilineCommentedReturn(int value) {
   final result = value + 1;
+
   /*
    * Return the prepared value without starting a new section.
    * Keep the whole comment attached to the return statement.
@@ -545,6 +548,7 @@ int goodMultilineCommentedReturn(int value) {
 
 int goodMultilineLineCommentedReturn(int value) {
   final result = value + 1;
+
   // Return the prepared value without starting a new section.
   // Keep the whole comment attached to the return statement.
   return result;
@@ -552,6 +556,7 @@ int goodMultilineLineCommentedReturn(int value) {
 
 void goodCommentedIf(int value) {
   final shouldPrint = value > 0;
+
   // Print only positive values.
   if (shouldPrint) {
     print(value);
@@ -560,6 +565,7 @@ void goodCommentedIf(int value) {
 
 void goodCommentedSwitch(int value) {
   final normalized = value.clamp(0, 1);
+
   // Handle the normalized branch immediately after clamping.
   switch (normalized) {
     case 0:
@@ -571,12 +577,14 @@ void goodCommentedSwitch(int value) {
 
 void goodCommentedExecution(int value) {
   final message = '$value';
+
   // Send the prepared message without starting a new section.
   print(message);
 }
 
 void goodCommentedAssignment(int value) {
   var result = 0;
+
   // Store the latest value in the local accumulator.
   result = value;
 
