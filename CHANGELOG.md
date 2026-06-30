@@ -1,3 +1,9 @@
+## 1.0.3
+
+- Updated the analyzer toolchain: `analyzer` 13.3.0, `analysis_server_plugin` 0.3.18,
+  and `analyzer_testing` 0.3.2 (`analyzer_plugin` 0.14.12 resolved transitively).
+- No rule behavior changes.
+
 ## 1.0.2
 
 - Updated `insert_line_between_sections` to enforce blank-line rules before comments
