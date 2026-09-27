@@ -12,8 +12,8 @@ packages, helping you enforce project-specific standards and practices.
 
 ## Requirements
 
-- Dart 3.9+
-- Flutter 3.38+
+- Dart 3.11+
+- Flutter 3.41+
 
 ## Setup
 
@@ -24,14 +24,14 @@ dev_dependencies:
   flutter_clean_lint:
     git:
       url: https://github.com/valeriinov/flutter_clean_lint
-      ref: 1.0.2
+      ref: 1.0.3
 ```
 
 **analysis_options.yaml** - enable the plugin:
 
 ```yaml
 plugins:
-  flutter_clean_lint: ^1.0.2
+  flutter_clean_lint: ^1.0.3
 ```
 
 The Dart rules are registered as warnings and work through `dart analyze`,
