@@ -1,3 +1,14 @@
+## 1.1.0
+
+- Added the `fix_blank_lines` command:
+  `dart run flutter_clean_lint:fix_blank_lines <path>...` fixes
+  `insert_line_between_sections` violations in place. It keeps suppressed violations and the
+  comment cases that need manual fixes unchanged.
+- The `insert_line_between_sections` message now names the statement kinds it compares.
+- The `pubspec.yaml` SDK constraint is now `>=3.11.0`, matching what `analyzer` 13.3.0
+  already required (Dart 3.11 / Flutter 3.41).
+- No rule behavior changes.
+
 ## 1.0.3
 
 - Updated the analyzer toolchain: `analyzer` 13.3.0, `analysis_server_plugin` 0.3.18,
@@ -28,4 +39,4 @@
 - Suppression format: `// ignore: flutter_clean_lint/<rule_name>`.
 - Removed ARB rules (`localization_keys_consistency`,
   `duplicate_localization_keys`). They are planned to return as a CLI tool in
-  v1.1.0.
+  a later version.
