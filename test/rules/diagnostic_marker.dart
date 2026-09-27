@@ -15,6 +15,10 @@ Future<void> assertDiagnosticsFromMarkers(
   await test.assertDiagnostics(markedSource.source, expected);
 }
 
+String removeLintMarkers(String source) {
+  return _markedSource(source).source;
+}
+
 _MarkedSource _markedSource(String source) {
   final markerRanges = _markerLineRanges(source);
   final cleanSource = _cleanSource(source, markerRanges);
