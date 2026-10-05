@@ -34,13 +34,26 @@ plugins:
   flutter_clean_lint: ^1.1.0
 ```
 
-The Dart rules are registered as warnings and work through `dart analyze`,
-`flutter analyze`, and IDE analysis without `custom_lint`.
+The rules work through `dart analyze`, `flutter analyze`, and IDE analysis without
+`custom_lint`. `avoid_commented_out_code` and `insert_line_between_sections` are warnings and are
+enabled by default. `order_private_methods_by_usage` and `avoid_doc_comments_on_private_members`
+are lints reported as info and are disabled by default; enable them under `diagnostics`:
+
+```yaml
+plugins:
+  flutter_clean_lint:
+    version: ^1.1.0
+    diagnostics:
+      order_private_methods_by_usage: true
+      avoid_doc_comments_on_private_members: true
+```
 
 ## Rules
 
 - `avoid_commented_out_code`
 - `insert_line_between_sections`
+- `order_private_methods_by_usage` (opt-in)
+- `avoid_doc_comments_on_private_members` (opt-in)
 
 ## Commands
 

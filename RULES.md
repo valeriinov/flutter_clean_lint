@@ -146,3 +146,102 @@ void goodCommentedStatements(int value) {
   print(message);
 }
 ```
+
+## order_private_methods_by_usage
+
+Opt-in lint, reported as info.
+
+### Description:
+
+This rule orders the private methods of a class, mixin, enum, extension, or extension type by
+their usage inside that declaration: a private method is placed by its first usage in the file,
+and a method used in several places is placed by its latest usage. The reader meets a call site
+before the implementation it calls.
+
+- Every member other than a private method keeps its place; its usages count at their position in
+  the file. The rule does not move private methods relative to other members.
+- Usages inside a private method count at that method's place, so all helpers called from one
+  method come before the helpers those helpers call.
+- A private method used in several places is placed after its latest usage, including a usage in
+  `dispose` or in another private method.
+- Calls, tear-offs (`onTap: _handleTap`), `this._method()`, and `Type._staticMethod()` count as
+  usages. A recursive call to the method itself does not.
+- When methods call each other, the method reached first from the other members goes first.
+- Private methods without usages in the declaration go last, in file order.
+- Private getters, setters, and operators are not ordered.
+
+The rule reports the fewest methods that must move and names the method each one belongs after.
+
+### Motivation:
+
+Ordering helpers by usage keeps a top-down reading flow: the reader meets a call site first and
+finds its implementation below.
+
+### Example:
+
+```dart
+// BAD: `_trimInput` is used inside `_validate`, after the call sites in `submit`.
+class LoginForm {
+  void submit() {
+    _validate();
+    _send();
+  }
+
+  void _validate() => _trimInput();
+
+  void _trimInput() {} // ← LINT
+
+  void _send() {}
+}
+
+// GOOD: Helpers follow the order of their latest usage.
+class LoginForm {
+  void submit() {
+    _validate();
+    _send();
+  }
+
+  void _validate() => _trimInput();
+
+  void _send() {}
+
+  void _trimInput() {}
+}
+```
+
+## avoid_doc_comments_on_private_members
+
+Opt-in lint, reported as info.
+
+### Description:
+
+This rule flags a doc comment (`///` or `/** */`) on a library-private declaration: a private
+field, method, getter, setter, constructor, top-level function or variable, class, mixin, enum,
+enum constant, extension (including an unnamed one), extension type, or typedef. A field
+declaration is flagged only when all of its variables are private. Public-named members of a
+private class are not flagged.
+
+A doc comment on a private member is kept only for SDK or framework behaviour, an external
+contract, or an ordering whose breach fails silently. Suppress the lint on those:
+
+```dart
+// ignore: flutter_clean_lint/avoid_doc_comments_on_private_members
+/// Must run before `super.initState()`; the framework reads it there.
+void _prepare() {}
+```
+
+### Motivation:
+
+Private members are read only next to their code. A doc comment there usually restates the name or
+the body and goes stale; a clear name says the same thing.
+
+### Example:
+
+```dart
+// BAD: The doc comment restates the method name.
+/// Handles the tap.
+void _handleTap() {} // ← LINT on the comment
+
+// GOOD: The name says what the method does.
+void _handleTap() {}
+```
