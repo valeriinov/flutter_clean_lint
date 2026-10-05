@@ -1,3 +1,13 @@
+## 1.2.0
+
+- Added the opt-in `order_private_methods_by_usage` lint: private methods follow the order of
+  their latest usage in the file, call sites above implementations.
+- Added the opt-in `avoid_doc_comments_on_private_members` lint: flags `///` and `/** */`
+  comments on library-private declarations.
+- Both are registered as lints reported at info level and stay off until enabled under
+  `plugins: flutter_clean_lint: diagnostics:`.
+- No changes to existing rules.
+
 ## 1.1.0
 
 - Added the `fix_blank_lines` command:

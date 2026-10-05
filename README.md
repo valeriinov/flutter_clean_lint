@@ -24,14 +24,14 @@ dev_dependencies:
   flutter_clean_lint:
     git:
       url: https://github.com/valeriinov/flutter_clean_lint
-      ref: 1.1.0
+      ref: 1.2.0
 ```
 
 **analysis_options.yaml** - enable the plugin:
 
 ```yaml
 plugins:
-  flutter_clean_lint: ^1.1.0
+  flutter_clean_lint: ^1.2.0
 ```
 
 The rules work through `dart analyze`, `flutter analyze`, and IDE analysis without
@@ -42,7 +42,7 @@ are lints reported as info and are disabled by default; enable them under `diagn
 ```yaml
 plugins:
   flutter_clean_lint:
-    version: ^1.1.0
+    version: ^1.2.0
     diagnostics:
       order_private_methods_by_usage: true
       avoid_doc_comments_on_private_members: true
