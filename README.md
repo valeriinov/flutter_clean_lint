@@ -24,28 +24,30 @@ dev_dependencies:
   flutter_clean_lint:
     git:
       url: https://github.com/valeriinov/flutter_clean_lint
-      ref: 1.2.0
+      ref: 1.3.0
 ```
 
 **analysis_options.yaml** - enable the plugin:
 
 ```yaml
 plugins:
-  flutter_clean_lint: ^1.2.0
+  flutter_clean_lint: ^1.3.0
 ```
 
 The rules work through `dart analyze`, `flutter analyze`, and IDE analysis without
 `custom_lint`. `avoid_commented_out_code` and `insert_line_between_sections` are warnings and are
-enabled by default. `order_private_methods_by_usage` and `avoid_doc_comments_on_private_members`
-are lints reported as info and are disabled by default; enable them under `diagnostics`:
+enabled by default. `order_private_methods_by_usage`, `avoid_doc_comments_on_private_members` and
+`avoid_hardcoded_style_values` are lints reported as info and are disabled by default; enable them
+under `diagnostics`:
 
 ```yaml
 plugins:
   flutter_clean_lint:
-    version: ^1.2.0
+    version: ^1.3.0
     diagnostics:
       order_private_methods_by_usage: true
       avoid_doc_comments_on_private_members: true
+      avoid_hardcoded_style_values: true
 ```
 
 ## Rules
@@ -54,6 +56,7 @@ plugins:
 - `insert_line_between_sections`
 - `order_private_methods_by_usage` (opt-in)
 - `avoid_doc_comments_on_private_members` (opt-in)
+- `avoid_hardcoded_style_values` (opt-in)
 
 ## Commands
 

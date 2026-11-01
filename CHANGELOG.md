@@ -1,3 +1,12 @@
+## 1.3.0
+
+- Added the opt-in `avoid_hardcoded_style_values` lint: flags hard-coded colours and style
+  numbers in widget code. It checks `Widget` and `State` class bodies and top-level variables in
+  files outside `test/`, and depends on no theme library.
+- The lint is registered at info level and stays off until enabled under
+  `plugins: flutter_clean_lint: diagnostics:`.
+- No changes to existing rules.
+
 ## 1.2.0
 
 - Added the opt-in `order_private_methods_by_usage` lint: private methods follow the order of
