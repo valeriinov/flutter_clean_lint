@@ -245,3 +245,72 @@ void _handleTap() {} // ← LINT on the comment
 // GOOD: The name says what the method does.
 void _handleTap() {}
 ```
+
+## avoid_hardcoded_style_values
+
+Opt-in lint, reported as info.
+
+### Description:
+
+This rule checks files outside `test/` that declare a class extending Flutter `Widget` or `State`.
+In such a file it checks the bodies of those classes and the top-level variables. Other classes,
+such as palette classes and `ThemeExtension` subclasses, are not checked.
+
+The rule flags three groups of values:
+
+- Colours: `Color(...)`, `Color.fromARGB`, `Color.fromRGBO`, `Colors.<name>` and
+  `CupertinoColors.<name>`. `Colors.transparent` is not flagged.
+- Non-zero number literals passed as `strokeWidth`, `thickness`, `elevation` or `fontSize` of any
+  call, as `width` of `BorderSide(...)` or `Border.all(...)`, and as the positional argument of
+  `Radius.circular` or `BorderRadius.circular`.
+- Non-zero number literals that initialize a `const` or `final` `double` variable, or that are a
+  direct argument of a `BorderRadius` or `EdgeInsets` creation that initializes a `const` or
+  `final` variable.
+
+The literal `0` is never flagged. Spacing at the call site, such as `SizedBox` and padding, is not
+flagged. The parameter list is fixed; the rule has no options.
+
+### Motivation:
+
+Colours and style numbers in widget code bypass the theme. A change of the design then needs an edit
+in every widget. Values from the theme stay in one place and follow light and dark mode.
+
+### Example:
+
+```dart
+class Card extends StatelessWidget {
+  const Card({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // BAD: The colour, the stroke width and the radius are hard-coded.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.red, // ← LINT
+        border: Border.all(width: 2), // ← LINT
+        borderRadius: BorderRadius.circular(8), // ← LINT
+      ),
+    );
+  }
+}
+
+class ThemedCard extends StatelessWidget {
+  const ThemedCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // GOOD: The values come from the theme. Zero and transparent are allowed.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.error,
+        border: Border.all(width: 0),
+        borderRadius: BorderRadius.zero,
+        boxShadow: const [],
+      ),
+      child: const ColoredBox(color: Colors.transparent),
+    );
+  }
+}
+```
