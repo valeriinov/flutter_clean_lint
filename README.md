@@ -71,6 +71,17 @@ It resolves the Dart files that `analysis_options.yaml` includes under the given
 their blank lines and prints each file it changed. Violations suppressed with `ignore` or
 `ignore_for_file` stay as they are. A path that does not exist stops the command with exit code 64.
 
+`order_private_methods_by_usage` violations are fixed by a second command:
+
+```bash
+dart run flutter_clean_lint:fix_private_method_order lib test
+```
+
+It takes the same paths and moves the private methods of each declaration into the order of the
+rule. A method moves with its doc comment, annotations, the comments directly above it and the
+comment at the end of its last line. A declaration with a suppressed violation stays as it is. The
+command does not change blank lines: run `fix_blank_lines` after it.
+
 ARB localization checks were removed from the analyzer plugin migration and are
 planned to return as a standalone CLI command in a later version.
 

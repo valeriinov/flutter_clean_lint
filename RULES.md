@@ -172,6 +172,15 @@ before the implementation it calls.
 
 The rule reports the fewest methods that must move and names the method each one belongs after.
 
+The `fix_private_method_order` command moves the private methods into this order:
+
+```bash
+dart run flutter_clean_lint:fix_private_method_order lib test
+```
+
+A method moves with its doc comment, annotations, the comments directly above it and the comment
+at the end of its last line. A declaration with a suppressed violation stays as it is.
+
 ### Motivation:
 
 Ordering helpers by usage keeps a top-down reading flow: the reader meets a call site first and
@@ -261,14 +270,20 @@ The rule flags three groups of values:
 - Colours: `Color(...)`, `Color.fromARGB`, `Color.fromRGBO`, `Colors.<name>` and
   `CupertinoColors.<name>`. `Colors.transparent` is not flagged.
 - Non-zero number literals passed as `strokeWidth`, `thickness`, `elevation` or `fontSize` of any
-  call, as `width` of `BorderSide(...)` or `Border.all(...)`, and as the positional argument of
-  `Radius.circular` or `BorderRadius.circular`.
-- Non-zero number literals that initialize a `const` or `final` `double` variable, or that are a
-  direct argument of a `BorderRadius` or `EdgeInsets` creation that initializes a `const` or
-  `final` variable.
+  call, as `width` of `BorderSide(...)` or `Border.all(...)`, as `width` or `height` of
+  `SizedBox(...)` or `Container(...)`, as `size` of `Icon(...)`, as the positional argument of
+  `Radius.circular` or `BorderRadius.circular`, and as any argument of `EdgeInsets.all`,
+  `EdgeInsets.symmetric`, `EdgeInsets.only` or `EdgeInsets.fromLTRB`.
+- Named numbers used in those places: a `const` or `final` `double` with a non-zero number literal
+  as its initializer, declared in a checked class or at top level. The rule flags the initializer
+  once, however many places use the name.
 
-The literal `0` is never flagged. Spacing at the call site, such as `SizedBox` and padding, is not
-flagged. The parameter list is fixed; the rule has no options.
+A named number is flagged only when the name itself is the argument. A name inside an expression,
+such as `_pressed ? 1.0 : _scale`, is not flagged. A named number that no such place
+uses is not flagged, nor is a number declared in another file or in a class that is not a widget
+or a state.
+
+The literal `0` is never flagged. The parameter list is fixed; the rule has no options.
 
 ### Motivation:
 
@@ -310,6 +325,35 @@ class ThemedCard extends StatelessWidget {
         boxShadow: const [],
       ),
       child: const ColoredBox(color: Colors.transparent),
+    );
+  }
+}
+
+class Gap extends StatelessWidget {
+  // BAD: The named number is used as a size.
+  static const double _gap = 16; // ← LINT
+
+  const Gap({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(height: _gap);
+  }
+}
+
+class PressedButton extends StatelessWidget {
+  // GOOD: The animation factor is not a style value.
+  static const double _scale = 0.96;
+
+  final bool pressed;
+
+  const PressedButton({super.key, required this.pressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      scale: pressed ? 1.0 : _scale,
+      duration: Duration.zero,
     );
   }
 }
