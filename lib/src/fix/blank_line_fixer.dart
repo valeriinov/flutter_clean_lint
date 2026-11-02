@@ -17,8 +17,8 @@ abstract final class BlankLineFixer {
   ///
   /// Only whitespace-only lines are removed or inserted. A gap between tokens
   /// on the same line, or one expecting a blank line while holding text, is
-  /// left as is, and so is a violation that an `ignore` or `ignore_for_file`
-  /// comment suppresses.
+  /// left as is, and so is a violation after a trailing comment or one that an
+  /// `ignore` or `ignore_for_file` comment suppresses.
   static String fix(String content, CompilationUnit unit) {
     final gaps = <(int, int), BlankLineGap>{};
     final ignoreInfo = IgnoreInfo.forDart(unit, content);

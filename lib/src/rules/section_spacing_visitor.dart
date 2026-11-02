@@ -385,6 +385,11 @@ class SectionSpacingVisitor extends RecursiveAstVisitor<void> {
     int expectedBlankLines,
   ) {
     final (firstLine, lastLine, hasComment) = _commentInfo(token);
+    final hasTrailingComment = hasComment && firstLine == prevLine;
+
+    if (hasTrailingComment) {
+      return const [];
+    }
 
     return [
       if (prevLine != null)

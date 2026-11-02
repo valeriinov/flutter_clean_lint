@@ -1,3 +1,27 @@
+## 1.3.1
+
+- Fixed `fix_blank_lines`: it no longer removes a correct blank line after a statement with a
+  trailing comment (`a(); // note`). It leaves that case to be fixed by hand, as RULES.md states.
+
+## 1.3.0
+
+- Added the opt-in `avoid_hardcoded_style_values` lint: flags hard-coded colours and style
+  numbers in widget code. It checks `Widget` and `State` class bodies and top-level variables in
+  files outside `test/`, and depends on no theme library.
+- The lint is registered at info level and stays off until enabled under
+  `plugins: flutter_clean_lint: diagnostics:`.
+- No changes to existing rules.
+
+## 1.2.0
+
+- Added the opt-in `order_private_methods_by_usage` lint: private methods follow the order of
+  their latest usage in the file, call sites above implementations.
+- Added the opt-in `avoid_doc_comments_on_private_members` lint: flags `///` and `/** */`
+  comments on library-private declarations.
+- Both are registered as lints reported at info level and stay off until enabled under
+  `plugins: flutter_clean_lint: diagnostics:`.
+- No changes to existing rules.
+
 ## 1.1.0
 
 - Added the `fix_blank_lines` command:
