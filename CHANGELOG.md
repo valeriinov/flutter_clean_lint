@@ -1,3 +1,8 @@
+## 1.3.1
+
+- Fixed `fix_blank_lines`: it no longer removes a correct blank line after a statement with a
+  trailing comment (`a(); // note`). It leaves that case to be fixed by hand, as RULES.md states.
+
 ## 1.3.0
 
 - Added the opt-in `avoid_hardcoded_style_values` lint: flags hard-coded colours and style
