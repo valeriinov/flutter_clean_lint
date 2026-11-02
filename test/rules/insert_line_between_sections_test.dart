@@ -22,7 +22,7 @@ class InsertLineBetweenSectionsTest extends AnalysisRuleTest {
   }
 
   Future<void> test_lintCases_should_reportExpectedDiagnostics() async {
-    await assertDiagnosticsFromMarkers(this, _lintCases);
+    await assertDiagnosticsFromMarkers(this, lintCases);
   }
 
   Future<void> test_ignoreCases_should_notReportDiagnostics() async {
@@ -30,7 +30,7 @@ class InsertLineBetweenSectionsTest extends AnalysisRuleTest {
   }
 }
 
-const _lintCases = r'''
+const lintCases = r'''
 // ignore_for_file: dead_code, unused_field, unused_local_variable
 
 void badMissingBetweenDeclarationGroups() {

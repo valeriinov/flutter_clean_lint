@@ -1,0 +1,451 @@
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/token.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/source/line_info.dart';
+
+/// The lines strictly between [prevLine] and [nextLine] that must hold
+/// exactly [expectedBlankLines] blank lines.
+class BlankLineGap {
+  final int prevLine;
+  final int nextLine;
+  final int expectedBlankLines;
+
+  const BlankLineGap({
+    required this.prevLine,
+    required this.nextLine,
+    required this.expectedBlankLines,
+  });
+}
+
+/// A spacing violation reported at [token], fixed by bringing every gap in
+/// [gaps] to its expected number of blank lines.
+class BlankLineViolation {
+  final Token token;
+  final List<BlankLineGap> gaps;
+
+  const BlankLineViolation({required this.token, required this.gaps});
+}
+
+/// Finds the blank-line violations of `insert_line_between_sections`.
+///
+/// Statements of the same kind stay together, statements of different kinds
+/// are separated by exactly one blank line, and block edges, `else`,
+/// collection literals, cascades and binary expressions hold no blank lines.
+class SectionSpacingVisitor extends RecursiveAstVisitor<void> {
+  final LineInfo _lines;
+  final void Function(BlankLineViolation violation) _onViolation;
+
+  SectionSpacingVisitor(this._lines, this._onViolation);
+
+  @override
+  void visitBlock(Block node) {
+    _validateStatements(node.statements, node.leftBracket, node.rightBracket);
+    super.visitBlock(node);
+  }
+
+  @override
+  void visitSwitchCase(SwitchCase node) {
+    _handleSwitchMember(node, () => super.visitSwitchCase(node));
+  }
+
+  @override
+  void visitSwitchDefault(SwitchDefault node) {
+    _handleSwitchMember(node, () => super.visitSwitchDefault(node));
+  }
+
+  // Dart 3 pattern-matching `switch`
+  @override
+  void visitSwitchPatternCase(SwitchPatternCase node) {
+    _handleSwitchMember(node, () => super.visitSwitchPatternCase(node));
+  }
+
+  @override
+  void visitIfStatement(IfStatement node) {
+    super.visitIfStatement(node);
+    _validateIfStatement(node);
+  }
+
+  @override
+  void visitCascadeExpression(CascadeExpression node) {
+    if (node.cascadeSections.isNotEmpty) {
+      _validateNodes(node.cascadeSections, node.target.endToken);
+    }
+    super.visitCascadeExpression(node);
+  }
+
+  @override
+  void visitListLiteral(ListLiteral node) {
+    _validateNodes(node.elements, node.leftBracket);
+    super.visitListLiteral(node);
+  }
+
+  @override
+  void visitSetOrMapLiteral(SetOrMapLiteral node) {
+    _validateNodes(node.elements, node.leftBracket);
+    super.visitSetOrMapLiteral(node);
+  }
+
+  @override
+  void visitBinaryExpression(BinaryExpression node) {
+    _validateBinaryExpression(node);
+    super.visitBinaryExpression(node);
+  }
+
+  void _handleSwitchMember(
+    // SwitchCase | SwitchDefault | SwitchPatternCase
+    dynamic node,
+    void Function() superCall,
+  ) {
+    _validateStatements(node.statements, node.colon, null);
+    superCall();
+  }
+
+  void _validateStatements(
+    NodeList<Statement> statements,
+    Token? start,
+    Token? end,
+  ) {
+    int? prevLine = start != null ? _lineAfter(start) : null;
+    Statement? prevStatement;
+
+    for (final current in statements) {
+      final info = _statementInfo(current, prevLine);
+
+      if (_shouldReport(prevStatement, info)) {
+        _report(
+          current.beginToken,
+          _statementGaps(prevStatement, prevLine, current),
+        );
+      }
+
+      prevLine = _lineAfter(current.endToken);
+      prevStatement = current;
+    }
+
+    final endToken = end;
+
+    if (endToken == null || prevLine == null) return;
+
+    if (_hasTrailingBlank(prevLine, endToken)) {
+      _report(endToken, [
+        BlankLineGap(
+          prevLine: prevLine,
+          nextLine: _lineOf(endToken.offset),
+          expectedBlankLines: 0,
+        ),
+      ]);
+    }
+  }
+
+  bool _hasTrailingBlank(int prevLine, Token end) {
+    return _lineOf(end.offset) - prevLine - 1 > 0;
+  }
+
+  int _lineAfter(Token token) {
+    return _lineOf(token.end);
+  }
+
+  _StatementInfo _statementInfo(Statement node, int? prevLine) {
+    final token = node.beginToken;
+    final (firstLine, lastLine, hasComment) = _commentInfo(token);
+    final currentLine = _lineOf(token.offset);
+
+    final blankBefore = firstLine - (prevLine ?? firstLine) - 1;
+    final blankAfter = hasComment ? currentLine - lastLine - 1 : 0;
+
+    return _StatementInfo(
+      current: node,
+      blankBefore: blankBefore,
+      blankAfter: blankAfter,
+      hasComment: hasComment,
+    );
+  }
+
+  bool _shouldReport(Statement? prev, _StatementInfo info) {
+    if (info.hasComment && info.blankAfter > 0) {
+      return true;
+    }
+
+    if (prev == null) {
+      return info.blankBefore > 0;
+    }
+
+    if (_isSameKind(prev, info.current)) {
+      return info.blankBefore != 0;
+    }
+
+    return info.blankBefore != 1;
+  }
+
+  void _report(Token token, List<BlankLineGap> gaps) {
+    _onViolation(BlankLineViolation(token: token, gaps: gaps));
+  }
+
+  List<BlankLineGap> _statementGaps(
+    Statement? prev,
+    int? prevLine,
+    Statement current,
+  ) {
+    final expectedBlankLines = _expectedBlankLinesBefore(prev, current);
+
+    return _leadingGaps(prevLine, current.beginToken, expectedBlankLines);
+  }
+
+  int _expectedBlankLinesBefore(Statement? prev, Statement current) {
+    if (prev == null || _isSameKind(prev, current)) {
+      return 0;
+    }
+
+    return 1;
+  }
+
+  bool _isSameKind(Statement prev, Statement curr) {
+    return _sameAwait(prev, curr) ||
+        _sameDeclaration(prev, curr) ||
+        _sameAssert(prev, curr) ||
+        _sameYield(prev, curr) ||
+        _isCurrBreak(curr) ||
+        _isCurrContinue(curr) ||
+        _sameAssignment(prev, curr) ||
+        _sameInvocation(prev, curr);
+  }
+
+  bool _sameDeclaration(Statement prev, Statement curr) {
+    if (!_isDeclaration(prev) || !_isDeclaration(curr)) {
+      return false;
+    }
+
+    final prevAwait = _isAwaitDeclaration(prev);
+    final currAwait = _isAwaitDeclaration(curr);
+
+    return prevAwait == currAwait;
+  }
+
+  bool _isDeclaration(Statement statement) {
+    return statement is VariableDeclarationStatement ||
+        statement is PatternVariableDeclarationStatement;
+  }
+
+  bool _isAwaitDeclaration(Statement statement) {
+    if (statement is VariableDeclarationStatement) {
+      return statement.variables.variables.any(
+        (v) => v.initializer is AwaitExpression,
+      );
+    }
+
+    if (statement is PatternVariableDeclarationStatement) {
+      return statement.declaration.expression is AwaitExpression;
+    }
+
+    return false;
+  }
+
+  bool _sameAssert(Statement prev, Statement curr) {
+    return prev is AssertStatement && curr is AssertStatement;
+  }
+
+  bool _sameYield(Statement prev, Statement curr) {
+    return prev is YieldStatement && curr is YieldStatement;
+  }
+
+  bool _isCurrBreak(Statement curr) {
+    return curr is BreakStatement;
+  }
+
+  bool _isCurrContinue(Statement curr) {
+    return curr is ContinueStatement;
+  }
+
+  bool _sameInvocation(Statement prev, Statement curr) {
+    return prev is ExpressionStatement &&
+        curr is ExpressionStatement &&
+        prev.expression is InvocationExpression &&
+        curr.expression is InvocationExpression;
+  }
+
+  bool _sameAssignment(Statement prev, Statement curr) {
+    if (!_isAssignment(prev) || !_isAssignment(curr)) {
+      return false;
+    }
+
+    return !_isAwaitStatement(prev) && !_isAwaitStatement(curr);
+  }
+
+  bool _isAssignment(Statement statement) {
+    return statement is ExpressionStatement &&
+        statement.expression is AssignmentExpression;
+  }
+
+  bool _sameAwait(Statement prev, Statement curr) {
+    return _isAwaitStatement(prev) && _isAwaitStatement(curr);
+  }
+
+  bool _isAwaitStatement(Statement statement) {
+    if (statement is! ExpressionStatement) {
+      return false;
+    }
+
+    final expr = statement.expression;
+
+    return expr is AwaitExpression ||
+        (expr is AssignmentExpression && expr.rightHandSide is AwaitExpression);
+  }
+
+  void _validateIfStatement(IfStatement statement) {
+    final elseKeyword = statement.elseKeyword;
+    if (elseKeyword == null) {
+      return;
+    }
+
+    final thenEndLine = _lineOf(statement.thenStatement.endToken.end);
+    final firstElseLine = _firstElseLine(elseKeyword);
+
+    if (_hasExtraBlankLines(thenEndLine, firstElseLine)) {
+      _report(elseKeyword, [
+        BlankLineGap(
+          prevLine: thenEndLine,
+          nextLine: firstElseLine,
+          expectedBlankLines: 0,
+        ),
+      ]);
+    }
+  }
+
+  int _firstElseLine(Token elseKeyword) {
+    int firstElseLine = _lineOf(elseKeyword.offset);
+
+    for (
+      Token? comment = elseKeyword.precedingComments;
+      comment != null;
+      comment = comment.next
+    ) {
+      final commentLine = _lineOf(comment.offset);
+      if (commentLine < firstElseLine) {
+        firstElseLine = commentLine;
+      }
+    }
+
+    return firstElseLine;
+  }
+
+  bool _hasExtraBlankLines(int prevLine, int nextLine) {
+    return nextLine - prevLine - 1 > 0;
+  }
+
+  void _validateNodes(NodeList<AstNode> nodes, Token start) {
+    int prevLine = _lineOf(start.end);
+
+    for (final node in nodes) {
+      final token = node.beginToken;
+      final (firstLine, lastLine, hasComment) = _commentInfo(token);
+
+      final blanksBefore = firstLine - prevLine - 1;
+      final blanksAfter = hasComment ? _lineOf(token.offset) - lastLine - 1 : 0;
+
+      if (_hasBlank(blanksBefore, blanksAfter)) {
+        _report(token, _leadingGaps(prevLine, token, 0));
+      }
+
+      prevLine = _lineOf(node.endToken.end);
+    }
+  }
+
+  bool _hasBlank(int before, int after) {
+    return before > 0 || after > 0;
+  }
+
+  void _validateBinaryExpression(BinaryExpression node) {
+    final token = node.rightOperand.beginToken;
+    final prevLine = _lineOf(node.leftOperand.endToken.end);
+    final info = _binaryInfo(token, prevLine);
+
+    if (_hasBinaryViolation(info)) {
+      _report(token, _leadingGaps(prevLine, token, 0));
+    }
+  }
+
+  _BinaryInfo _binaryInfo(Token token, int prevLine) {
+    final (firstLine, lastLine, hasComment) = _commentInfo(token);
+    final currentLine = _lineOf(token.offset);
+
+    return _BinaryInfo(
+      blankBefore: firstLine - prevLine - 1,
+      blankAfter: hasComment ? currentLine - lastLine - 1 : 0,
+      hasComment: hasComment,
+    );
+  }
+
+  bool _hasBinaryViolation(_BinaryInfo info) {
+    return info.blankBefore > 0 || (info.hasComment && info.blankAfter > 0);
+  }
+
+  List<BlankLineGap> _leadingGaps(
+    int? prevLine,
+    Token token,
+    int expectedBlankLines,
+  ) {
+    final (firstLine, lastLine, hasComment) = _commentInfo(token);
+
+    return [
+      if (prevLine != null)
+        BlankLineGap(
+          prevLine: prevLine,
+          nextLine: firstLine,
+          expectedBlankLines: expectedBlankLines,
+        ),
+      if (hasComment)
+        BlankLineGap(
+          prevLine: lastLine,
+          nextLine: _lineOf(token.offset),
+          expectedBlankLines: 0,
+        ),
+    ];
+  }
+
+  (int firstLine, int lastLine, bool hasComment) _commentInfo(Token token) {
+    int firstLine = _lineOf(token.offset);
+    int lastLine = firstLine;
+
+    for (
+      Token? comment = token.precedingComments;
+      comment != null;
+      comment = comment.next
+    ) {
+      final startLine = _lineOf(comment.offset);
+      firstLine = startLine < firstLine ? startLine : firstLine;
+      lastLine = _lineOf(comment.end);
+    }
+
+    return (firstLine, lastLine, token.precedingComments != null);
+  }
+
+  int _lineOf(int offset) {
+    return _lines.getLocation(offset).lineNumber;
+  }
+}
+
+class _StatementInfo {
+  const _StatementInfo({
+    required this.current,
+    required this.blankBefore,
+    required this.blankAfter,
+    required this.hasComment,
+  });
+
+  final Statement current;
+  final int blankBefore;
+  final int blankAfter;
+  final bool hasComment;
+}
+
+class _BinaryInfo {
+  const _BinaryInfo({
+    required this.blankBefore,
+    required this.blankAfter,
+    required this.hasComment,
+  });
+
+  final int blankBefore;
+  final int blankAfter;
+  final bool hasComment;
+}

@@ -36,18 +36,38 @@ final result = calculate(value);
 ### Description:
 
 This rule enforces vertical spacing in Dart code blocks and selected multiline expressions.
-It reports three kinds of violations:
+Each statement has a kind, and two neighbouring statements of the same kind stay together while
+statements of different kinds are separated by exactly one blank line. Statements of the same kind:
 
-1. Missing blank line – when two unrelated code sections touch each other with no empty line
+- declarations, as long as all of them initialize with `await` or none of them do;
+- `await` expressions, including assignments of an awaited value;
+- assignments without `await`;
+- invocations (`foo()`, `a.b()`); a constructor call such as `Timer(...)` is not one;
+- `assert` statements;
+- `yield` statements.
+
+`break` and `continue` join the statement above them. Every other statement (`if`, `for`,
+`return`, `try`, a local function, ...) stands apart. It reports three kinds of violations:
+
+1. Missing blank line – when two statements of different kinds touch each other with no empty line
    in-between.
-2. Extra blank line – when a blank line appears inside one logical section, at a block start or end,
-   before `else`, inside a switch case, inside a collection literal, inside a cascade, or inside a
-   binary expression.
+2. Extra blank line – when a blank line appears between statements of the same kind, at a block
+   start or end, before `else`, inside a switch case, inside a collection literal, inside a cascade,
+   or inside a binary expression.
 3. Detached leading comment – when a comment that belongs to the next statement has a blank line
    after it (separating the comment from the statement).
 
 The rule treats a leading comment as part of the following statement. A comment explaining a
 `return`, `if`, `switch`, assignment, or function call must sit directly above that statement.
+
+A comment between a statement and the closing `}`, and a trailing comment after a statement
+(`a(); // note`), are reported as well.
+
+### Fix:
+
+`dart run flutter_clean_lint:fix_blank_lines <path>...` rewrites blank lines in the analyzed Dart
+files under the given paths and prints each file it changed. It leaves the two comment cases above
+to be fixed by hand and skips violations suppressed with `ignore` or `ignore_for_file`.
 
 ### Motivation:
 

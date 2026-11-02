@@ -1,9 +1,9 @@
 name: flutter_clean_lint
 description: "Custom lints for Flutter"
-version: 1.0.3
+version: 1.1.0
 
 environment:
-  sdk: '>=3.9.0 <4.0.0'
+  sdk: '>=3.11.0 <4.0.0'
 
 dependencies:
   analysis_server_plugin: 0.3.18
