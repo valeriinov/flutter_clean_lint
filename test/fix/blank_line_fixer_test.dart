@@ -113,6 +113,13 @@ void trailingComment() {
   print('b');
 }
 
+void trailingCommentBeforeOtherKind() {
+  final a = 1; // note
+
+  // expect_lint! insert_line_between_sections
+  print(a);
+}
+
 void commentBeforeClosingBrace() {
   print('a');
   // note
