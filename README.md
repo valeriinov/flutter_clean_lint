@@ -24,14 +24,14 @@ dev_dependencies:
   flutter_clean_lint:
     git:
       url: https://github.com/valeriinov/flutter_clean_lint
-      ref: 1.3.1
+      ref: 1.4.0
 ```
 
 **analysis_options.yaml** - enable the plugin:
 
 ```yaml
 plugins:
-  flutter_clean_lint: ^1.3.1
+  flutter_clean_lint: ^1.4.0
 ```
 
 The rules work through `dart analyze`, `flutter analyze`, and IDE analysis without
@@ -43,7 +43,7 @@ under `diagnostics`:
 ```yaml
 plugins:
   flutter_clean_lint:
-    version: ^1.3.1
+    version: ^1.4.0
     diagnostics:
       order_private_methods_by_usage: true
       avoid_doc_comments_on_private_members: true

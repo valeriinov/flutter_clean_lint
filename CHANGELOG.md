@@ -1,3 +1,15 @@
+## 1.4.0
+
+- `avoid_hardcoded_style_values` flags a named number only where it flags a literal: a `const`
+  or `final` `double` declared in a widget class or at top level is flagged at its initializer
+  when it is used directly in a style argument. A named number that is not used in a style
+  argument is not flagged.
+- `avoid_hardcoded_style_values` also flags non-zero literals passed as `width` or `height` of
+  `SizedBox` and `Container`, as `size` of `Icon`, and to `EdgeInsets.all`, `symmetric`, `only`
+  and `fromLTRB`.
+- Added the `fix_private_method_order` command: it moves private methods into the order of
+  `order_private_methods_by_usage`.
+
 ## 1.3.1
 
 - Fixed `fix_blank_lines`: it no longer removes a correct blank line after a statement with a
