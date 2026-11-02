@@ -1,4 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
 
 /// A private method of a class-like declaration and the places that use it.
@@ -43,7 +44,7 @@ class MisplacedPrivateMethod {
 List<MisplacedPrivateMethod> misplacedPrivateMethods(
   List<PrivateMethod> methods,
 ) {
-  final expected = _expectedOrder(methods);
+  final expected = orderedPrivateMethods(methods);
   final expectedIndexes = [
     for (final method in methods) expected.indexOf(method),
   ];
@@ -59,7 +60,28 @@ List<MisplacedPrivateMethod> misplacedPrivateMethods(
   ];
 }
 
-List<PrivateMethod> _expectedOrder(List<PrivateMethod> methods) {
+/// Returns the private methods of the [declaration] in file order, each with
+/// its usages inside the other members of the declaration.
+///
+/// The unit that holds the [declaration] must be resolved.
+List<PrivateMethod> collectPrivateMethods(CompilationUnitMember declaration) {
+  final members = _membersOf(declaration);
+  final methods = [
+    for (final member in members)
+      if (_privateMethodElement(member) case final element?)
+        PrivateMethod(member as MethodDeclaration, element),
+  ];
+
+  _collectUsages(members, methods);
+
+  return methods;
+}
+
+/// Returns the [methods], given in file order, in the order in which each one
+/// follows the latest of its usages.
+///
+/// The placement rules are those of [misplacedPrivateMethods].
+List<PrivateMethod> orderedPrivateMethods(List<PrivateMethod> methods) {
   final placed = <PrivateMethod>[];
   final remaining = [...methods];
 
@@ -236,4 +258,65 @@ PrivateMethod? _predecessor(List<PrivateMethod> expected, int expectedIndex) {
   }
 
   return expected[expectedIndex - 1];
+}
+
+List<ClassMember> _membersOf(CompilationUnitMember declaration) {
+  return switch (declaration) {
+    ClassDeclaration(:final body) => body.members,
+    MixinDeclaration(:final body) => body.members,
+    ExtensionDeclaration(:final body) => body.members,
+    ExtensionTypeDeclaration(:final body) => body.members,
+    EnumDeclaration(:final body) => body.members,
+    _ => const [],
+  };
+}
+
+ExecutableElement? _privateMethodElement(ClassMember member) {
+  if (member is! MethodDeclaration) {
+    return null;
+  }
+
+  if (_isAccessorOrOperator(member)) {
+    return null;
+  }
+
+  final element = member.declaredFragment?.element;
+
+  if (element == null || !element.isPrivate) {
+    return null;
+  }
+
+  return element;
+}
+
+bool _isAccessorOrOperator(MethodDeclaration method) {
+  return method.isGetter || method.isSetter || method.isOperator;
+}
+
+void _collectUsages(List<ClassMember> members, List<PrivateMethod> methods) {
+  final methodsByElement = {
+    for (final method in methods) method.element: method,
+  };
+
+  for (final member in members) {
+    member.accept(_UsageCollector(member, methodsByElement));
+  }
+}
+
+class _UsageCollector extends RecursiveAstVisitor<void> {
+  final ClassMember _host;
+  final Map<Element, PrivateMethod> _methodsByElement;
+
+  _UsageCollector(this._host, this._methodsByElement);
+
+  @override
+  void visitSimpleIdentifier(SimpleIdentifier node) {
+    final method = _methodsByElement[node.element?.baseElement];
+
+    if (method == null || method.node == _host) {
+      return;
+    }
+
+    method.usages.add(MethodUsage(host: _host, offset: node.offset));
+  }
 }

@@ -3,7 +3,6 @@ import 'package:analyzer/analysis_rule/rule_context.dart';
 import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/error/error.dart';
 
 import 'private_method_order.dart';
@@ -41,64 +40,19 @@ class _CompilationUnitVisitor extends SimpleAstVisitor<void> {
   @override
   void visitCompilationUnit(CompilationUnit node) {
     for (final declaration in node.declarations) {
-      _checkMembers(_membersOf(declaration));
+      _checkMembers(declaration);
     }
   }
 
-  void _checkMembers(List<ClassMember> members) {
-    final methods = [
-      for (final member in members)
-        if (_privateMethodElement(member) case final element?)
-          PrivateMethod(member as MethodDeclaration, element),
-    ];
+  void _checkMembers(CompilationUnitMember declaration) {
+    final methods = collectPrivateMethods(declaration);
 
     if (methods.length < 2) {
       return;
     }
 
-    _collectUsages(members, methods);
-
     for (final misplaced in misplacedPrivateMethods(methods)) {
       _report(misplaced);
-    }
-  }
-
-  List<ClassMember> _membersOf(CompilationUnitMember declaration) {
-    return switch (declaration) {
-      ClassDeclaration(:final body) => body.members,
-      MixinDeclaration(:final body) => body.members,
-      ExtensionDeclaration(:final body) => body.members,
-      ExtensionTypeDeclaration(:final body) => body.members,
-      EnumDeclaration(:final body) => body.members,
-      _ => const [],
-    };
-  }
-
-  ExecutableElement? _privateMethodElement(ClassMember member) {
-    if (member is! MethodDeclaration) {
-      return null;
-    }
-
-    if (_isAccessorOrOperator(member)) {
-      return null;
-    }
-
-    final element = member.declaredFragment?.element;
-
-    if (element == null || !element.isPrivate) {
-      return null;
-    }
-
-    return element;
-  }
-
-  void _collectUsages(List<ClassMember> members, List<PrivateMethod> methods) {
-    final methodsByElement = {
-      for (final method in methods) method.element: method,
-    };
-
-    for (final member in members) {
-      member.accept(_UsageCollector(member, methodsByElement));
     }
   }
 
@@ -112,27 +66,5 @@ class _CompilationUnitVisitor extends SimpleAstVisitor<void> {
       misplaced.method.node.name,
       arguments: [misplaced.method.name, placement],
     );
-  }
-
-  bool _isAccessorOrOperator(MethodDeclaration method) {
-    return method.isGetter || method.isSetter || method.isOperator;
-  }
-}
-
-class _UsageCollector extends RecursiveAstVisitor<void> {
-  final ClassMember _host;
-  final Map<Element, PrivateMethod> _methodsByElement;
-
-  _UsageCollector(this._host, this._methodsByElement);
-
-  @override
-  void visitSimpleIdentifier(SimpleIdentifier node) {
-    final method = _methodsByElement[node.element?.baseElement];
-
-    if (method == null || method.node == _host) {
-      return;
-    }
-
-    method.usages.add(MethodUsage(host: _host, offset: node.offset));
   }
 }

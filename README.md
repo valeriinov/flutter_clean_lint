@@ -24,14 +24,14 @@ dev_dependencies:
   flutter_clean_lint:
     git:
       url: https://github.com/valeriinov/flutter_clean_lint
-      ref: 1.3.1
+      ref: 1.4.0
 ```
 
 **analysis_options.yaml** - enable the plugin:
 
 ```yaml
 plugins:
-  flutter_clean_lint: ^1.3.1
+  flutter_clean_lint: ^1.4.0
 ```
 
 The rules work through `dart analyze`, `flutter analyze`, and IDE analysis without
@@ -43,7 +43,7 @@ under `diagnostics`:
 ```yaml
 plugins:
   flutter_clean_lint:
-    version: ^1.3.1
+    version: ^1.4.0
     diagnostics:
       order_private_methods_by_usage: true
       avoid_doc_comments_on_private_members: true
@@ -70,6 +70,17 @@ dart run flutter_clean_lint:fix_blank_lines lib test
 It resolves the Dart files that `analysis_options.yaml` includes under the given paths, rewrites
 their blank lines and prints each file it changed. Violations suppressed with `ignore` or
 `ignore_for_file` stay as they are. A path that does not exist stops the command with exit code 64.
+
+`order_private_methods_by_usage` violations are fixed by a second command:
+
+```bash
+dart run flutter_clean_lint:fix_private_method_order lib test
+```
+
+It takes the same paths and moves the private methods of each declaration into the order of the
+rule. A method moves with its doc comment, annotations, the comments directly above it and the
+comment at the end of its last line. A declaration with a suppressed violation stays as it is. The
+command does not change blank lines: run `fix_blank_lines` after it.
 
 ARB localization checks were removed from the analyzer plugin migration and are
 planned to return as a standalone CLI command in a later version.

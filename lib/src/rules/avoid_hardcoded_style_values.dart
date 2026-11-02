@@ -63,6 +63,8 @@ class _CompilationUnitVisitor extends SimpleAstVisitor<void> {
         declaration.accept(styleVisitor);
       }
     }
+
+    styleVisitor.reportStyleConstants();
   }
 
   bool _isWidgetClass(ClassDeclaration declaration) {
@@ -89,9 +91,16 @@ class _StyleValueVisitor extends RecursiveAstVisitor<void> {
   };
   static const _colorConstructors = {null, 'fromARGB', 'fromRGBO'};
   static const _colorPalettes = {'Colors', 'CupertinoColors'};
-  static const _styleConstantTypes = {'BorderRadius', 'EdgeInsets'};
+  static const _edgeInsetsConstructors = {
+    'all',
+    'symmetric',
+    'only',
+    'fromLTRB',
+  };
 
   final AvoidHardcodedStyleValues _rule;
+  final _constants = <Element, Literal>{};
+  final _styleReferences = <Element>{};
 
   _StyleValueVisitor(this._rule);
 
@@ -110,6 +119,8 @@ class _StyleValueVisitor extends RecursiveAstVisitor<void> {
       _report(node);
     }
 
+    _collectStyleReference(node, node.element);
+
     super.visitPrefixedIdentifier(node);
   }
 
@@ -121,20 +132,49 @@ class _StyleValueVisitor extends RecursiveAstVisitor<void> {
       _report(node);
     }
 
+    _collectStyleReference(node, node.propertyName.element);
+
     super.visitPropertyAccess(node);
   }
 
   @override
+  void visitSimpleIdentifier(SimpleIdentifier node) {
+    _collectStyleReference(node, node.element);
+
+    super.visitSimpleIdentifier(node);
+  }
+
+  @override
+  void visitVariableDeclaration(VariableDeclaration node) {
+    final literal = _styleConstantLiteral(node);
+    final element = node.declaredFragment?.element.baseElement;
+
+    if (literal != null && element != null) {
+      _constants[element] = literal;
+    }
+
+    super.visitVariableDeclaration(node);
+  }
+
+  @override
   void visitIntegerLiteral(IntegerLiteral node) {
-    if (node.value != 0 && _isStyleNumber(node)) {
+    if (node.value != 0 && _isStylePlace(node)) {
       _report(node);
     }
   }
 
   @override
   void visitDoubleLiteral(DoubleLiteral node) {
-    if (node.value != 0 && _isStyleNumber(node)) {
+    if (node.value != 0 && _isStylePlace(node)) {
       _report(node);
+    }
+  }
+
+  void reportStyleConstants() {
+    for (final MapEntry(:key, :value) in _constants.entries) {
+      if (_styleReferences.contains(key)) {
+        _report(value);
+      }
     }
   }
 
@@ -156,15 +196,41 @@ class _StyleValueVisitor extends RecursiveAstVisitor<void> {
     return _colorPalettes.any((name) => _isFlutterType(palette.element, name));
   }
 
-  bool _isStyleNumber(Literal node) {
-    return _isStyleArgument(node) || _isStyleConstant(node);
+  void _collectStyleReference(Expression node, Element? element) {
+    final variable = _variableOf(element);
+
+    if (variable != null && _isStylePlace(node)) {
+      _styleReferences.add(variable);
+    }
+  }
+
+  Literal? _styleConstantLiteral(VariableDeclaration node) {
+    if (!_isFinalOrConst(node) || !_isDouble(node)) {
+      return null;
+    }
+
+    return switch (node.initializer) {
+      final IntegerLiteral literal when literal.value != 0 => literal,
+      final DoubleLiteral literal when literal.value != 0 => literal,
+      _ => null,
+    };
   }
 
   void _report(AstNode node) {
     _rule.reportAtNode(node, arguments: [node.toSource()]);
   }
 
-  bool _isStyleArgument(Literal node) {
+  Element? _variableOf(Element? element) {
+    final base = element?.baseElement;
+
+    if (base is PropertyAccessorElement) {
+      return base.variable.baseElement;
+    }
+
+    return base;
+  }
+
+  bool _isStylePlace(Expression node) {
     final parent = node.parent;
 
     if (parent is NamedArgument) {
@@ -177,35 +243,15 @@ class _StyleValueVisitor extends RecursiveAstVisitor<void> {
 
     final call = parent.parent;
 
-    return call is InstanceCreationExpression &&
-        (_isCreationOf(call, 'Radius', 'circular') ||
-            _isCreationOf(call, 'BorderRadius', 'circular'));
+    return call is InstanceCreationExpression && _isStylePositionalCall(call);
   }
 
-  bool _isStyleConstant(Literal node) {
-    final parent = node.parent;
+  bool _isFinalOrConst(VariableDeclaration variable) {
+    return variable.isConst || variable.isFinal;
+  }
 
-    if (parent is VariableDeclaration) {
-      return _isFinalOrConst(parent) && _isDouble(parent);
-    }
-
-    final argumentList = parent is NamedArgument ? parent.parent : parent;
-
-    if (argumentList is! ArgumentList) {
-      return false;
-    }
-
-    final creation = argumentList.parent;
-
-    if (creation is! InstanceCreationExpression) {
-      return false;
-    }
-
-    final variable = creation.parent;
-
-    return variable is VariableDeclaration &&
-        _isFinalOrConst(variable) &&
-        _isStyleConstantCreation(creation);
+  bool _isDouble(VariableDeclaration variable) {
+    return variable.declaredFragment?.element.type.isDartCoreDouble ?? false;
   }
 
   bool _isStyleNamedArgument(NamedArgument argument) {
@@ -223,28 +269,44 @@ class _StyleValueVisitor extends RecursiveAstVisitor<void> {
 
     final call = argumentList.parent;
 
-    return name == 'width' &&
-        call is InstanceCreationExpression &&
-        _isBorderCreation(call);
+    if (call is! InstanceCreationExpression) {
+      return false;
+    }
+
+    return _isEdgeInsetsCreation(call) || _isDimensionParameter(call, name);
   }
 
-  bool _isDouble(VariableDeclaration variable) {
-    return variable.declaredFragment?.element.type.isDartCoreDouble ?? false;
+  bool _isStylePositionalCall(InstanceCreationExpression call) {
+    return _isEdgeInsetsCreation(call) || _isRadiusCreation(call);
   }
 
-  bool _isFinalOrConst(VariableDeclaration variable) {
-    return variable.isConst || variable.isFinal;
+  bool _isDimensionParameter(InstanceCreationExpression call, String name) {
+    return switch (name) {
+      'width' => _isBorderCreation(call) || _isBoxCreation(call),
+      'height' => _isBoxCreation(call),
+      'size' => _isCreationOf(call, 'Icon', null),
+      _ => false,
+    };
   }
 
-  bool _isStyleConstantCreation(InstanceCreationExpression creation) {
-    final element = creation.constructorName.type.element;
+  bool _isEdgeInsetsCreation(InstanceCreationExpression call) {
+    return _edgeInsetsConstructors.contains(call.constructorName.name?.name) &&
+        _isFlutterType(call.constructorName.type.element, 'EdgeInsets');
+  }
 
-    return _styleConstantTypes.any((name) => _isFlutterType(element, name));
+  bool _isRadiusCreation(InstanceCreationExpression call) {
+    return _isCreationOf(call, 'Radius', 'circular') ||
+        _isCreationOf(call, 'BorderRadius', 'circular');
   }
 
   bool _isBorderCreation(InstanceCreationExpression call) {
     return _isCreationOf(call, 'BorderSide', null) ||
         _isCreationOf(call, 'Border', 'all');
+  }
+
+  bool _isBoxCreation(InstanceCreationExpression call) {
+    return _isCreationOf(call, 'SizedBox', null) ||
+        _isCreationOf(call, 'Container', null);
   }
 
   bool _isCreationOf(
